@@ -1,0 +1,149 @@
+{
+  "splash.wordmark": {
+    "type": "float",
+    "durationMs": 3200,
+    "amplitude": 3.2,
+    "delayMs": 0,
+    "curve": "easeInOut"
+  },
+  "splash.tagline": {
+    "type": "sway",
+    "durationMs": 3600,
+    "amplitude": 4.0,
+    "delayMs": 260,
+    "curve": "easeInOut"
+  },
+  "splash.logo": {
+    "type": "breathe",
+    "durationMs": 2600,
+    "amplitude": 0.035,
+    "delayMs": 0,
+    "curve": "easeInOut"
+  },
+  "splash.logo.glow": {
+    "type": "pulse",
+    "durationMs": 2200,
+    "amplitude": 0.08,
+    "delayMs": 120,
+    "curve": "easeInOut"
+  },
+  "splash.chip.properties": {
+    "type": "bob",
+    "durationMs": 2400,
+    "amplitude": 3.0,
+    "delayMs": 0,
+    "curve": "easeInOut"
+  },
+  "splash.chip.people": {
+    "type": "bob",
+    "durationMs": 2400,
+    "amplitude": 3.0,
+    "delayMs": 240,
+    "curve": "easeInOut"
+  },
+  "splash.chip.updates": {
+    "type": "bob",
+    "durationMs": 2400,
+    "amplitude": 3.0,
+    "delayMs": 480,
+    "curve": "easeInOut"
+  },
+  "splash.progress": {
+    "type": "shimmer",
+    "durationMs": 1800,
+    "amplitude": 0.25,
+    "delayMs": 0,
+    "curve": "linear"
+  },
+  "splash.footer": {
+    "type": "drift",
+    "durationMs": 4200,
+    "amplitude": 2.0,
+    "delayMs": 400,
+    "curve": "easeInOut"
+  },
+  "restore.vault": {
+    "type": "orbit",
+    "durationMs": 8000,
+    "amplitude": 5.0,
+    "delayMs": 0,
+    "curve": "linear"
+  },
+  "restore.key.emblem": {
+    "type": "breathe",
+    "durationMs": 2400,
+    "amplitude": 0.028,
+    "delayMs": 0,
+    "curve": "easeInOut"
+  },
+  "restore.key.owner": {
+    "type": "tilt",
+    "durationMs": 2800,
+    "amplitude": 0.018,
+    "delayMs": 120,
+    "curve": "easeInOut"
+  },
+  "restore.key.tenant": {
+    "type": "tilt",
+    "durationMs": 3000,
+    "amplitude": 0.018,
+    "delayMs": 260,
+    "curve": "easeInOut"
+  },
+  "restore.key.house": {
+    "type": "tilt",
+    "durationMs": 3200,
+    "amplitude": 0.018,
+    "delayMs": 400,
+    "curve": "easeInOut"
+  },
+  "restore.progress": {
+    "type": "shimmer",
+    "durationMs": 1600,
+    "amplitude": 0.3,
+    "delayMs": 0,
+    "curve": "linear"
+  },
+  "restore.status": {
+    "type": "pulse",
+    "durationMs": 2000,
+    "amplitude": 0.04,
+    "delayMs": 0,
+    "curve": "easeInOut"
+  },
+  "restore.step.1": {
+    "type": "float",
+    "durationMs": 2600,
+    "amplitude": 2.0,
+    "delayMs": 0,
+    "curve": "easeInOut"
+  },
+  "restore.step.2": {
+    "type": "float",
+    "durationMs": 2600,
+    "amplitude": 2.0,
+    "delayMs": 180,
+    "curve": "easeInOut"
+  },
+  "restore.step.3": {
+    "type": "float",
+    "durationMs": 2600,
+    "amplitude": 2.0,
+    "delayMs": 360,
+    "curve": "easeInOut"
+  },
+  "restore.step.4": {
+    "type": "float",
+    "durationMs": 2600,
+    "amplitude": 2.0,
+    "delayMs": 540,
+    "curve": "easeInOut"
+  },
+  "restore.spark": {
+    "type": "pulse",
+    "durationMs": 1900,
+    "amplitude": 0.12,
+    "delayMs": 80,
+    "curve": "easeInOut"
+  }
+}
