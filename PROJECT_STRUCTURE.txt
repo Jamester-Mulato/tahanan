@@ -1,0 +1,36 @@
+TAHANAN LOCAL FULL-STACK PROJECT
+
+Flutter Android client:
+  lib/
+  android/
+  pubspec.yaml
+
+Backend:
+  backend/src/
+  backend/sql/001_schema.sql
+  backend/sql/002_seed.sql
+  backend/.env.example
+
+Database:
+  Your existing PostgreSQL database created/managed from pgAdmin.
+  The backend can create the database if missing, initialize the schema if missing,
+  and verify the bundled schema migration checksum before starting.
+
+NO FIREBASE:
+  Firebase Core: removed
+  Firebase Auth: removed
+  Firestore: removed
+  google-services.json: removed
+  Google Services Gradle plugin: removed
+
+LOCAL REQUEST PATH:
+  Android emulator -> http://10.0.2.2:8080 -> Tahanan API -> PostgreSQL
+
+PHYSICAL PHONE:
+  Run Flutter with --dart-define=TAHANAN_API_URL=http://PC-LAN-IP:8080
+
+AUTH:
+  Flutter Google Sign-In -> Google ID token -> Tahanan backend -> Tahanan JWT -> PostgreSQL user
+
+ROLE MODEL:
+  User role is per boarding-house membership, not a global account role.
