@@ -1,0 +1,78 @@
+# Render Blueprint for the Tahanan API.
+#
+# The Flutter app lives at the repository root; the Express service lives in
+# ./backend, so Render builds only that folder.
+#
+# Values marked `sync: false` are entered once in the Render dashboard and
+# never stored in git.
+
+services:
+  - type: web
+    name: tahanan-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # --- Neon -------------------------------------------------
+      # Paste the pooled connection string from the Neon dashboard.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      # Neon creates the database itself; the app role cannot CREATE DATABASE.
+      - key: DB_AUTO_CREATE
+        value: "false"
+      - key: DB_AUTO_INIT_SCHEMA
+        value: "true"
+      - key: DB_VERIFY_SCHEMA
+        value: "true"
+
+      # --- Secrets (fill in the dashboard) ----------------------
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_IDS
+        sync: false
+
+      # --- Browser origin / links -------------------------------
+      # e.g. https://tahanan.onrender.com (comma-separated for several)
+      - key: CORS_ORIGINS
+        sync: false
+      - key: APP_PUBLIC_URL
+        sync: false
+
+      # --- Google reCAPTCHA v2 ----------------------------------
+      - key: RECAPTCHA_ENABLED
+        value: "true"
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+
+      # --- Outgoing mail (login OTP + security alerts) ----------
+      # Render's free plan blocks outbound SMTP, so the API sends through
+      # Brevo's HTTPS API. Create a free key at https://app.brevo.com and
+      # verify the sender email first.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
