@@ -1,0 +1,20 @@
+# Threat model — Appendix B
+
+One row per protection in handout section 12. C = Confidentiality, I =
+Integrity, A = Availability. “Tested” says exactly how it was checked.
+
+| # | Protection | Threat | Vulnerability | Countermeasure | CIA | How I tested it |
+|---|---|---|---|---|---|---|
+| P1 | SQL injection | Attacker submits `' OR '1'='1` to sign in or search | User text concatenated into SQL | Every query uses `pg` placeholders (`$1…`) in `backend/src/**`; no string-built SQL | C, I | Submitted `' OR '1'='1` as username: normal “Invalid username or password.”, no SQL error, no session |
+| P2 | XSS | Attacker stores `<script>alert(1)</script>` as a username | Log values rendered as HTML | API returns JSON; Flutter renders every log value as text, never HTML | I | Used the payload as a username, opened the admin dashboard: it appears literally, no script runs |
+| P3 | CSRF | Foreign page posts a state-changing request with the user's session | Ambient cookie credentials | No cookie auth: `Authorization: Bearer <JWT>`; `csrfGuard` refuses a foreign `Origin` on POST/PATCH/PUT/DELETE and logs `CSRF_REJECTED` | I | POST with `Origin: https://evil.example` → 403 `CSRF_REJECTED`; row written to `auth_events` |
+| P4 | Username enumeration | Attacker learns which usernames exist from different errors | Different messages/status per branch | Login always “Invalid username or password.” with a dummy scrypt verify for unknown users; forgot-password answers behave the same for unknown users | C | Compared unknown username vs known username + wrong password: same status and body |
+| P5 | IP blocking | One machine brute-forces many accounts | Unlimited attempts per IP | `throttle.service.ts` counts failures per IP across all accounts in 10 min; 13 failures block the IP for 10 min and log `IP_BLOCKED` | A | Scripted 13 failures in a minute → 429 `IP_BLOCKED` with `retryAfter` |
+| P6 | Session hardening | Stolen long-lived token | Token never expires, no idle limit | New JWT + refresh token per sign-in, token version checked on every call, 6-min idle limit on server (`SESSION_IDLE`) and in the app, logout bumps the version | C | Idle 7 min then call `/api/me` → 401 `SESSION_IDLE`; sign out → old token 401 |
+| P7 | Password history | User changes back to an old password | No history | `password_history` keeps the last 3 scrypt hashes; `assertPasswordNotReused` refuses a match | I | Changed to the current password → “You cannot reuse a recent password.” |
+| P8 | Honeypot | Bot fills every visible field | No hidden trap | Hidden `website` field; if filled the server returns 201 and silently does nothing | A | Filled `website` with a URL → no account, no OTP, no error |
+| P9 | Activity log | Attacks leave no trace | No audit trail | `auth_events` records event, exact typed identifier, user, IP, user agent, details, time; append-only trigger | I | Every flow above produced its row; `UPDATE`/`DELETE` on the table is rejected by the trigger |
+| P10 | Error handling | Stack trace or SQL text shown to the user | Default Express error page | `errorHandler` returns generic JSON; real stack goes to `backend/logs/error.log` (git-ignored, not served) | C | Forced a server error: user sees “An unexpected server error occurred.” |
+| P11 | Secrets | Database/SMTP/CAPTCHA/encryption keys in the repo | Hard-coded credentials | All secrets in `backend/.env` (git-ignored); `.env` is never served; `ENCRYPTION_KEY` is 32 bytes base64 | C | `git check-ignore backend/.env`; scanned tracked files for keys |
+| P12 | Security headers | Clickjacking, MIME sniffing | No headers | Helmet: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, plus CSP/HSTS in production | I | `verify-handout.ts` asserts `DENY` and `nosniff` on `/health` |
+| P13 | Encryption at rest | Database dump leaks a government ID | Plain text sensitive field | AES-256-GCM, random 12-byte IV per value, auth tag, HMAC lookup for uniqueness (`security/crypto.ts`) | C | `SELECT government_id_ciphertext` shows base64 ciphertext; decryption only in the owner's API response |
