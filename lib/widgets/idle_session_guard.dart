@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/design_tokens.dart';
 import '../state/app_state.dart';
 
-/// Client half of the handout idle-session rule (seed: 6 minutes).
+/// Client half of the handout idle-session rule (default 6 minutes, editable
+/// at runtime from the admin site).
 ///
-/// The backend enforces the same rule in `middleware/auth.ts`
-/// (`IDLE_TIMEOUT_SECONDS`, `last_activity_at`). This guard warns the user one
-/// minute before the deadline and signs out locally + on the server, so the
-/// screen never keeps showing protected data after the token is dead.
+/// The backend enforces the same rule, except for administrators. This guard
+/// shows a passive toast during the final warning window (“Signing out in
+/// Ns…”), then signs out automatically. There is no blocking dialog and no
+/// stay/sign-out prompt — any real interaction simply resets the timer.
 ///
 /// Only real input (pointer/touch/scroll) counts as activity. Background
 /// refreshes do not, and neither do rebuilds.
@@ -19,10 +19,10 @@ class IdleSessionGuard extends StatefulWidget {
   final bool enabled;
   final Widget child;
 
-  /// Total idle time before sign-out. Defaults to the seeded 6 minutes.
+  /// Total idle time before sign-out.
   final Duration timeout;
 
-  /// How long before the deadline the warning appears. Defaults to 1 minute.
+  /// How long before the deadline the countdown toast appears.
   final Duration warning;
 
   const IdleSessionGuard({
@@ -40,8 +40,9 @@ class IdleSessionGuard extends StatefulWidget {
 class _IdleSessionGuardState extends State<IdleSessionGuard> {
   Timer? _ticker;
   DateTime _lastActivity = DateTime.now();
-  bool _warningOpen = false;
   bool _expiring = false;
+  OverlayEntry? _toast;
+  final ValueNotifier<int> _secondsLeft = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -52,7 +53,9 @@ class _IdleSessionGuardState extends State<IdleSessionGuard> {
   @override
   void didUpdateWidget(covariant IdleSessionGuard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.enabled != widget.enabled) {
+    if (oldWidget.enabled != widget.enabled ||
+        oldWidget.timeout != widget.timeout ||
+        oldWidget.warning != widget.warning) {
       _sync();
     }
   }
@@ -60,86 +63,151 @@ class _IdleSessionGuardState extends State<IdleSessionGuard> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _hideToast();
+    _secondsLeft.dispose();
     super.dispose();
   }
 
   void _sync() {
     _ticker?.cancel();
     _lastActivity = DateTime.now();
-    _warningOpen = false;
     _expiring = false;
+    _hideToast();
     if (!widget.enabled) return;
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    // Show the countdown on the first frame too, so a short timeout is
+    // visible immediately after signing in.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.enabled) _tick();
+    });
   }
 
   /// Any deliberate interaction pushes the deadline back.
   void _markActive() {
-    if (!widget.enabled || _warningOpen || _expiring) return;
+    if (!widget.enabled || _expiring) return;
     _lastActivity = DateTime.now();
+    _hideToast();
   }
 
   void _tick() {
-    if (!widget.enabled || _expiring || _warningOpen) return;
+    if (!widget.enabled || _expiring) return;
     final idle = DateTime.now().difference(_lastActivity);
     if (idle >= widget.timeout) {
       unawaited(_expire());
       return;
     }
-    if (idle >= widget.timeout - widget.warning) {
-      unawaited(_showWarning());
+
+    final remaining = widget.timeout - idle;
+    if (widget.warning > Duration.zero && remaining <= widget.warning) {
+      final seconds = remaining.inSeconds.clamp(1, widget.warning.inSeconds);
+      _secondsLeft.value = seconds;
+      _showToast();
     }
   }
 
-  Future<void> _showWarning() async {
-    if (_warningOpen || _expiring || !mounted) return;
-    _warningOpen = true;
-    final stayed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => _IdleWarningDialog(
-        seconds: widget.warning.inSeconds,
-        timeout: widget.timeout,
+  void _showToast() {
+    if (_toast != null) return;
+    final overlay = Overlay.of(context, rootOverlay: true);
+    _toast = OverlayEntry(
+      builder: (context) => Positioned(
+        left: 16,
+        right: 16,
+        bottom: 28,
+        child: IgnorePointer(
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1F14),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0x5527C46A)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x55000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ValueListenableBuilder<int>(
+                valueListenable: _secondsLeft,
+                builder: (context, seconds, _) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.lock_clock_rounded,
+                      size: 15,
+                      color: Color(0xFF3DDC84),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Signing out in ${seconds}s',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
-    if (!mounted) return;
-    _warningOpen = false;
-    if (stayed == true) {
-      _lastActivity = DateTime.now();
-      return;
-    }
-    await _expire();
+    overlay.insert(_toast!);
+  }
+
+  void _hideToast() {
+    _toast?.remove();
+    _toast = null;
   }
 
   Future<void> _expire() async {
     if (_expiring) return;
     _expiring = true;
     _ticker?.cancel();
+    _hideToast();
     if (!mounted) return;
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final label = widget.timeout.inSeconds < 60
+        ? '${widget.timeout.inSeconds} seconds'
+        : '${widget.timeout.inMinutes} minutes';
 
     // Clears local state and revokes the token server-side.
     unawaited(context.read<AppState>().signOut());
 
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xxl),
-        ),
-        title: Text('Signed out', style: AppType.h3),
-        content: Text(
-          'Your session ended after ${widget.timeout.inMinutes} minutes '
-          'without activity, as required by the security policy.',
-          style: AppType.body,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Sign in again'),
+    final entry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: 16,
+        right: 16,
+        bottom: 28,
+        child: IgnorePointer(
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1F14),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0x5527C46A)),
+              ),
+              child: Text(
+                'Session ended after $label without activity',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
+    overlay.insert(entry);
+    Timer(const Duration(seconds: 3), entry.remove);
   }
 
   @override
@@ -150,66 +218,6 @@ class _IdleSessionGuardState extends State<IdleSessionGuard> {
       onPointerDown: (_) => _markActive(),
       onPointerSignal: (_) => _markActive(),
       child: widget.child,
-    );
-  }
-}
-
-class _IdleWarningDialog extends StatefulWidget {
-  final int seconds;
-  final Duration timeout;
-
-  const _IdleWarningDialog({required this.seconds, required this.timeout});
-
-  @override
-  State<_IdleWarningDialog> createState() => _IdleWarningDialogState();
-}
-
-class _IdleWarningDialogState extends State<_IdleWarningDialog> {
-  late int _left = widget.seconds;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      if (_left <= 1) {
-        timer.cancel();
-        Navigator.of(context).pop(false);
-        return;
-      }
-      setState(() => _left -= 1);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xxl),
-      ),
-      title: Text('Still there?', style: AppType.h3),
-      content: Text(
-        'You have been inactive for a while. For your security you will be '
-        'signed out in $_left seconds.',
-        style: AppType.body,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Sign out now'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Stay signed in'),
-        ),
-      ],
     );
   }
 }
