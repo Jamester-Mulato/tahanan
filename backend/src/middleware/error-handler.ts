@@ -35,6 +35,24 @@ function writeErrorLog(
 }
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
+  // body-parser rejects malformed JSON before any route runs. That is a client
+  // error, not a server fault, so it must not become a 500 or fill error.log.
+  const bodyError = error as { type?: string; status?: number; body?: unknown };
+  if (bodyError.type === "entity.parse.failed") {
+    res.status(400).json({
+      error: "INVALID_JSON",
+      message: "The request body is not valid JSON."
+    });
+    return;
+  }
+  if (bodyError.type === "entity.too.large") {
+    res.status(413).json({
+      error: "PAYLOAD_TOO_LARGE",
+      message: "The request body is too large."
+    });
+    return;
+  }
+
   if (error instanceof ZodError) {
     res.status(400).json({
       error: "VALIDATION_ERROR",
