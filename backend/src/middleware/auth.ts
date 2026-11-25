@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import type { AuthenticatedRequest, AuthUser } from "../types/auth";
 import { env } from "../config/env";
 import { query } from "../config/db";
+import { sessionSettings } from "../services/settings.service";
 
 interface AccessTokenPayload extends jwt.JwtPayload {
   sub: string;
@@ -67,10 +68,11 @@ export async function requireAuth(
       return;
     }
 
+    const settings = await sessionSettings();
     if (
       row.last_activity_at &&
       Date.now() - new Date(row.last_activity_at).getTime() >
-        env.IDLE_TIMEOUT_SECONDS * 1000
+        settings.idleTimeoutSeconds * 1000
     ) {
       res.status(401).json({
         error: "SESSION_IDLE",

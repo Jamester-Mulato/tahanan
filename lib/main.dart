@@ -18,12 +18,14 @@ import 'screens/owner.dart';
 import 'screens/splash_screen.dart';
 import 'screens/tenant.dart';
 import 'state/app_state.dart';
+import 'state/session_config.dart';
 import 'state/theme_controller.dart';
 import 'widgets/idle_session_guard.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ServerConfig.load();
+  await SessionConfig.load();
 
   ErrorReporter.install();
   PlatformDispatcher.instance.onError = (error, stack) {
@@ -163,6 +165,10 @@ class _RootState extends State<Root> {
 
     return IdleSessionGuard(
       enabled: s.loggedIn && !showSplash,
+      // Demo override: a visible 10-second countdown from the moment the
+      // session starts, then an automatic sign-out.
+      timeout: SessionConfig.idle,
+      warning: SessionConfig.warning,
       child: KeyedSubtree(
         key: ValueKey('theme-${AppColors.dark}'),
         child: AnimatedSwitcher(

@@ -7,6 +7,10 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/require-admin";
 import { asyncRoute } from "../utils/async-route";
 import { HttpError } from "../utils/http-error";
+import {
+  saveSessionSettings,
+  sessionSettings
+} from "../services/settings.service";
 import type { AuthenticatedRequest } from "../types/auth";
 
 export const adminConsoleRouter = Router();
@@ -71,8 +75,34 @@ adminConsoleRouter.get(
 );
 
 // ---------------------------------------------------------------
+// SESSION POLICY (runtime; clients pick it up on the next page load)
+// ---------------------------------------------------------------
+adminConsoleRouter.get(
+  "/session",
+  asyncRoute(async (_req, res) => {
+    res.json(await sessionSettings());
+  })
+);
+
+adminConsoleRouter.post(
+  "/session",
+  asyncRoute(async (req: AuthenticatedRequest, res) => {
+    const body = z
+      .object({
+        idleTimeoutSeconds: z.number().int().min(5).max(3600),
+        warningSeconds: z.number().int().min(0).max(3600)
+      })
+      .parse(req.body);
+    const saved = await saveSessionSettings(body);
+    await audit(req, "UPDATE_SESSION_POLICY", null, saved);
+    res.json(saved);
+  })
+);
+
+// ---------------------------------------------------------------
 // DATABASE BROWSER
 // ---------------------------------------------------------------
+
 adminConsoleRouter.get(
   "/tables",
   asyncRoute(async (_req, res) => {

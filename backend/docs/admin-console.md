@@ -19,7 +19,12 @@ is appended to `admin_audit` with the acting admin, IP and timestamp.
 ### Overview
 Live counters (users, admins, houses, rooms, tenants, announcements, concerns,
 client errors, auth events), database size, PostgreSQL/Node versions, uptime,
-and the latest admin actions.
+the **session policy**, and the latest admin actions.
+
+**Session policy** — idle timeout and countdown warning, in seconds. Saving
+applies to the server immediately; **refresh the client** (web page or app) and
+it fetches the new values from `/api/config`, so no rebuild or restart is
+needed. The same values are enforced server-side (`SESSION_IDLE`).
 
 ### Database
 - **SQL console** — runs any statement as the database role, with a 15-second

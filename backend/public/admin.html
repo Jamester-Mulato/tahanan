@@ -128,6 +128,21 @@
       <div class="grid" id="stats"></div>
       <h2>Server</h2>
       <div class="panel" id="serverInfo">Loading…</div>
+      <h2>Session</h2>
+      <div class="panel">
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1;min-width:160px">
+            <label style="margin-top:0">Idle timeout (seconds)</label>
+            <input id="idleSeconds" type="number" min="5" max="3600">
+          </div>
+          <div style="flex:1;min-width:160px">
+            <label style="margin-top:0">Countdown warning (seconds)</label>
+            <input id="warningSeconds" type="number" min="0" max="3600">
+          </div>
+          <button onclick="saveSession()">Save</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">Applies to the server immediately. Open clients pick it up the next time the page loads.</p>
+      </div>
       <h2>Recent admin actions</h2>
       <div class="panel" id="audit">Loading…</div>
     </section>
@@ -332,10 +347,13 @@ function startConsole() {
 
 async function loadOverview() {
   try {
-    const [overview, audit] = await Promise.all([
+    const [overview, audit, session] = await Promise.all([
       api('/api/admin/console/overview'),
-      api('/api/admin/console/audit')
+      api('/api/admin/console/audit'),
+      api('/api/admin/console/session')
     ]);
+    $('idleSeconds').value = session.idleTimeoutSeconds;
+    $('warningSeconds').value = session.warningSeconds;
     const fields = [
       ['Users', overview.users], ['Admins', overview.admins],
       ['Houses', overview.houses], ['Rooms', overview.rooms],
@@ -365,6 +383,30 @@ async function loadOverview() {
       : '<span class="hint">Nothing yet.</span>';
   } catch (err) {
     if (err.status === 401 || err.status === 403) return signOut();
+    toast(err.message);
+  }
+}
+
+async function saveSession() {
+  const idleTimeoutSeconds = Number($('idleSeconds').value);
+  const warningSeconds = Number($('warningSeconds').value);
+  if (!Number.isFinite(idleTimeoutSeconds) || idleTimeoutSeconds < 5) {
+    toast('Idle timeout must be at least 5 seconds.');
+    return;
+  }
+  if (!Number.isFinite(warningSeconds) || warningSeconds < 0) {
+    toast('Countdown warning must be 0 or more.');
+    return;
+  }
+  try {
+    const saved = await api('/api/admin/console/session', {
+      method: 'POST',
+      body: { idleTimeoutSeconds, warningSeconds }
+    });
+    $('idleSeconds').value = saved.idleTimeoutSeconds;
+    $('warningSeconds').value = saved.warningSeconds;
+    toast('Session policy saved. Reload the client to apply.');
+  } catch (err) {
     toast(err.message);
   }
 }

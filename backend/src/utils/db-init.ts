@@ -88,6 +88,20 @@ async function initializeOrVerifySchema(schema: string, expectedChecksum: string
     );
     await db.query(adminConsole);
     console.log("[DB] admin console schema ensured");
+
+    const runtimeSettings = await fs.readFile(
+      path.resolve(process.cwd(), "sql", "010_runtime_settings.sql"),
+      "utf8"
+    );
+    await db.query(runtimeSettings);
+    const initialIdle = Math.min(Math.max(env.IDLE_TIMEOUT_SECONDS, 5), 3600);
+    await db.query(
+      `INSERT INTO app_settings (key, value)
+       VALUES ('idle_timeout_seconds', $1), ('session_warning_seconds', $2)
+       ON CONFLICT (key) DO NOTHING`,
+      [String(initialIdle), String(Math.min(60, initialIdle))]
+    );
+    console.log("[DB] runtime settings ensured");
   } finally {
     await db.end();
   }

@@ -3,6 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import { env, corsOrigins } from "./config/env";
+import { asyncRoute } from "./utils/async-route";
+import { sessionSettings } from "./services/settings.service";
 import { errorHandler } from "./middleware/error-handler";
 import { csrfGuard } from "./middleware/csrf";
 import { authRouter } from "./routes/auth.routes";
@@ -66,6 +68,18 @@ app.get("/health", (_req, res) => {
     environment: env.NODE_ENV
   });
 });
+
+// Runtime settings the clients fetch on load (editable from the admin site).
+app.get(
+  "/api/config",
+  asyncRoute(async (_req, res) => {
+    const settings = await sessionSettings();
+    res.json({
+      idleTimeoutSeconds: settings.idleTimeoutSeconds,
+      warningSeconds: settings.warningSeconds
+    });
+  })
+);
 
 // The widget page needs Google's scripts and frames, so it gets a narrower
 // route-specific policy instead of the strict API policy.
