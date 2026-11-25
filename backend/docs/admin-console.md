@@ -24,7 +24,10 @@ the **session policy**, and the latest admin actions.
 **Session policy** — idle timeout and countdown warning, in seconds. Saving
 applies to the server immediately; **refresh the client** (web page or app) and
 it fetches the new values from `/api/config`, so no rebuild or restart is
-needed. The same values are enforced server-side (`SESSION_IDLE`).
+needed. The same values are enforced server-side (`SESSION_IDLE`) for
+tenant/owner accounts. **Administrators are exempt from the idle timeout**, so
+the console never locks itself out; only a token-version bump or a disabled
+account ends an admin session.
 
 ### Database
 - **SQL console** — runs any statement as the database role, with a 15-second

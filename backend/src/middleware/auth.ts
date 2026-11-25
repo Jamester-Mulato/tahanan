@@ -69,7 +69,10 @@ export async function requireAuth(
     }
 
     const settings = await sessionSettings();
+    // The admin console is a long-lived control surface: the idle-session
+    // policy applies to tenant/owner accounts, not administrators.
     if (
+      !row.is_admin &&
       row.last_activity_at &&
       Date.now() - new Date(row.last_activity_at).getTime() >
         settings.idleTimeoutSeconds * 1000
