@@ -21,6 +21,9 @@
 | Monitoring script | [`backend/scripts/monitor.ts`](backend/scripts/monitor.ts) |
 | Demo-account seeder | [`backend/scripts/seed-test-accounts.ts`](backend/scripts/seed-test-accounts.ts) |
 | Repeatable test records | [`backend/scripts/seed-demo-evidence.ts`](backend/scripts/seed-demo-evidence.ts) |
+| Live attack pack | [`backend/scripts/demo-attacks.ts`](backend/scripts/demo-attacks.ts) |
+| Server lockout proof | [`backend/scripts/demo-lockout.ts`](backend/scripts/demo-lockout.ts) |
+| Presentation script | [`docs/DEMO_FLOW.md`](docs/DEMO_FLOW.md) and [`docs/submission/IT107_Tahanan_Demo_Flow.docx`](docs/submission/IT107_Tahanan_Demo_Flow.docx) |
 
 The Word file is generated from [`docs/build_submission_docx.py`](docs/build_submission_docx.py)
 so the document and the code cannot drift apart:
