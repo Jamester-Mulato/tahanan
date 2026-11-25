@@ -74,12 +74,18 @@ Type each value, press **Continue**, and read the message that appears *under th
 With the app still open, run this in terminal B:
 
 ```powershell
-curl.exe -s -X POST http://127.0.0.1:8080/api/auth/register `
-  -H "Content-Type: application/json" `
-  -d "{\"id_number\":\"1234-567\",\"first_name\":\"juan\",\"email\":\"juan@\"}"
+try {
+  Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8080/api/auth/register `
+    -ContentType 'application/json' `
+    -Body '{"id_number":"1234-567","first_name":"juan","email":"juan@"}'
+} catch {
+  $_.ErrorDetails.Message
+}
 ```
 
 The response is `422` with `details.id_number`, `details.first_name` and `details.email` carrying the same messages. **Proves S3.**
+
+> Use `Invoke-RestMethod` here, not `curl.exe -d "{...}"`. Windows PowerShell strips the inner quotes when JSON is handed to a native program, so curl receives `{id_number:...}` and the server correctly answers `400 INVALID_JSON`.
 
 ### 1.4 Register correctly (2 min)
 
@@ -101,9 +107,10 @@ Fill the form properly:
 The honeypot field is not rendered, so there is nothing to show. Prove it from the terminal:
 
 ```powershell
-curl.exe -s -i -X POST http://127.0.0.1:8080/api/auth/register `
-  -H "Content-Type: application/json" `
-  -d "{\"website\":\"http://bot.example\",\"id_number\":\"9999-9999\"}"
+$r = Invoke-WebRequest -Method Post -Uri http://127.0.0.1:8080/api/auth/register `
+  -ContentType 'application/json' `
+  -Body '{"website":"http://bot.example","id_number":"9999-9999"}' -UseBasicParsing
+"$($r.StatusCode) $($r.Content)"
 ```
 
 It answers `201` and creates no account. **Say:** “A bot that fills every field it can see trips this and gets a fake success; a person never sees the field.” **Proves P8.**

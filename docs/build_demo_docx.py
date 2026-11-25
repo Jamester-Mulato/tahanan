@@ -59,7 +59,7 @@ def rich(paragraph, text: str, size: float | None = None) -> None:
             if part.startswith("`") and part.endswith("`"):
                 run = paragraph.add_run(part[1:-1])
                 run.font.name = "Consolas"
-                run.font.size = Pt((size or 10) - 0.5)
+                run.font.size = Pt((size or 9.5) - 1)
             else:
                 run = paragraph.add_run(part)
                 if size:
@@ -116,7 +116,7 @@ def build() -> None:
 
     normal = doc.styles["Normal"]
     normal.font.name = "Calibri"
-    normal.font.size = Pt(10)
+    normal.font.size = Pt(9.5)
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), "Calibri")
 
     for name, size in (("Heading 1", 16), ("Heading 2", 12.5), ("Heading 3", 11)):
