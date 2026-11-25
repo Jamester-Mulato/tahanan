@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict OOcNGHU061e5gmmQOjpCYUQglg2vjMLXQwYT3MXfxzIVcCe2qM4qUyrdQ0cXhlb
+\restrict lC8AHDGv4JadKKmSJHMmVTvoPoef0JNA056r6qiSLWMxfTeSpOBESnbyJZXgupR
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -923,6 +923,26 @@ COPY public.auth_events (id, event_type, user_id, email, ip_address, user_agent,
 162	LOGIN_SUCCESS	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) OpenCode/2.3.0 Chrome/152.0.7977.167 Electron/44.9.1 Safari/537.36	\N	2026-11-18 21:32:07.513506+08	jamestermulato@gmail.com
 163	ADMIN_VIEWED_DASHBOARD	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) OpenCode/2.3.0 Chrome/152.0.7977.167 Electron/44.9.1 Safari/537.36	\N	2026-11-18 21:33:21.813512+08	jamestermulato@gmail.com
 164	ADMIN_VIEWED_DASHBOARD	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	100.84.208.58	Dart/3.13 (dart:io)	\N	2026-11-18 21:37:18.263425+08	jamestermulato@gmail.com
+379	LOGIN_FAILED	\N	' or '1'='1	::ffff:127.0.0.1	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:53.431998+08	' OR '1'='1
+380	LOGIN_FAILED	\N	<script>alert(1)</script>	::ffff:127.0.0.1	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:53.509133+08	<script>alert(1)</script>
+381	LOGIN_FAILED	\N	nosuchuser404	::ffff:127.0.0.1	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:53.740246+08	nosuchuser404
+382	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	203.0.113.78	node	{"reason": "wrong_password", "lockedFor": 0}	2026-11-25 15:03:53.819051+08	hand2372
+383	CSRF_REJECTED	\N	\N	::ffff:127.0.0.1	node	{"path": "/api/auth/logout", "method": "POST", "origin": "https://evil.example"}	2026-11-25 15:03:53.827074+08	\N
+384	HONEYPOT_TRIGGERED	\N	\N	::ffff:127.0.0.1	node	{"path": "/register"}	2026-11-25 15:03:53.834376+08	\N
+385	LOGIN_FAILED	\N	probe1	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:53.906558+08	probe1
+386	LOGIN_FAILED	\N	probe2	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:53.97139+08	probe2
+387	LOGIN_FAILED	\N	probe3	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.038887+08	probe3
+388	LOGIN_FAILED	\N	probe4	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.107684+08	probe4
+389	LOGIN_FAILED	\N	probe5	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.176972+08	probe5
+390	LOGIN_FAILED	\N	probe6	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.245029+08	probe6
+391	LOGIN_FAILED	\N	probe7	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.310982+08	probe7
+392	LOGIN_FAILED	\N	probe8	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.379051+08	probe8
+393	LOGIN_FAILED	\N	probe9	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.446324+08	probe9
+394	LOGIN_FAILED	\N	probe10	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.514739+08	probe10
+395	LOGIN_FAILED	\N	probe11	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.580508+08	probe11
+396	LOGIN_FAILED	\N	probe12	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.653032+08	probe12
+397	IP_BLOCKED	\N	probe13	203.0.113.77	node	{"ip": "203.0.113.77", "seconds": 600, "threshold": 13}	2026-11-25 15:03:54.72103+08	probe13
+398	LOGIN_FAILED	\N	probe13	203.0.113.77	node	{"reason": "unknown_or_passwordless"}	2026-11-25 15:03:54.722164+08	probe13
 165	ADMIN_VIEWED_DASHBOARD	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	100.84.208.58	Dart/3.13 (dart:io)	\N	2026-11-18 21:37:24.016788+08	jamestermulato@gmail.com
 166	ADMIN_VIEWED_DASHBOARD	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	100.84.208.58	Dart/3.13 (dart:io)	\N	2026-11-18 21:37:27.749996+08	jamestermulato@gmail.com
 167	LOGGED_OUT_ALL	35abeb06-cba5-4a42-a757-2f5eca443dcd	\N	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) OpenCode/2.3.0 Chrome/152.0.7977.167 Electron/44.9.1 Safari/537.36	\N	2026-11-18 21:40:57.378915+08	\N
@@ -1033,6 +1053,10 @@ COPY public.auth_events (id, event_type, user_id, email, ip_address, user_agent,
 376	LOCKOUT_TIER_3	07b41a06-dc31-4a61-8a15-cd3149a95c76	jamestermulato+h2372@gmail.com	\N	\N	{"seconds": 64, "attempts": 9}	2026-11-25 12:53:41.403724+08	jamestermulato+h2372@gmail.com
 377	ALERT_EMAIL_SENT	07b41a06-dc31-4a61-8a15-cd3149a95c76	jamestermulato+h2372@gmail.com	\N	\N	{"kind": "lockout", "seconds": 64, "attempts": 9}	2026-11-25 12:53:44.520625+08	jamestermulato+h2372@gmail.com
 378	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	\N	\N	{"reason": "wrong_password", "lockedFor": 64}	2026-11-25 12:53:44.522873+08	hand2372
+399	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	::ffff:127.0.0.1	node	{"reason": "wrong_password", "lockedFor": 0}	2026-11-25 15:35:56.281991+08	hand2372
+400	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	::ffff:127.0.0.1	node	{"reason": "wrong_password", "lockedFor": 0}	2026-11-25 15:35:56.463499+08	hand2372
+401	LOCKOUT_TIER_1	07b41a06-dc31-4a61-8a15-cd3149a95c76	jamestermulato+h2372@gmail.com	::ffff:127.0.0.1	node	{"seconds": 16, "attempts": 3}	2026-11-25 15:35:56.628043+08	jamestermulato+h2372@gmail.com
+402	ALERT_EMAIL_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	jamestermulato+h2372@gmail.com	::ffff:127.0.0.1	node	{"kind": "lockout"}	2026-11-25 15:36:06.950745+08	jamestermulato+h2372@gmail.com
 284	LOGIN_SUCCESS	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	100.68.121.7	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36	\N	2026-11-24 23:59:34.550208+08	jamestermulato@gmail.com
 285	LOGGED_OUT_ALL	35abeb06-cba5-4a42-a757-2f5eca443dcd	\N	100.68.121.7	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36	\N	2026-11-25 00:02:24.305852+08	\N
 286	RESET_REQUESTED	35abeb06-cba5-4a42-a757-2f5eca443dcd	jamestermulato@gmail.com	\N	\N	{"identifier": "jamester123"}	2026-11-25 00:02:40.917934+08	jamestermulato@gmail.com
@@ -1111,6 +1135,7 @@ COPY public.auth_events (id, event_type, user_id, email, ip_address, user_agent,
 359	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	\N	\N	{"reason": "wrong_password", "lockedFor": 0}	2026-11-25 12:52:49.743686+08	hand2372
 360	LOCKOUT_TIER_1	07b41a06-dc31-4a61-8a15-cd3149a95c76	jamestermulato+h2372@gmail.com	\N	\N	{"seconds": 16, "attempts": 3}	2026-11-25 12:52:49.862379+08	jamestermulato+h2372@gmail.com
 364	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	\N	\N	{"reason": "wrong_password", "lockedFor": 0}	2026-11-25 12:53:32.666524+08	hand2372
+403	LOGIN_FAILED	07b41a06-dc31-4a61-8a15-cd3149a95c76	hand2372	::ffff:127.0.0.1	node	{"reason": "wrong_password", "lockedFor": 16}	2026-11-25 15:36:06.96187+08	hand2372
 \.
 
 
@@ -1174,6 +1199,7 @@ COPY public.ip_blocks (ip_address, blocked_until, reason, created_at) FROM stdin
 203.0.113.12	2026-11-25 12:40:56.312616+08	6 wrong OTP codes in 10 minutes [demo-seed]	2026-11-25 12:33:56.312616+08
 203.0.113.13	2026-11-25 12:32:26.396916+08	13 failures in 10 minutes (expired sample) [demo-seed]	2026-11-25 12:33:56.396916+08
 203.0.113.14	2026-11-25 12:09:56.400426+08	13 failures in 10 minutes (expired sample) [demo-seed]	2026-11-25 12:33:56.400426+08
+203.0.113.77	2026-11-25 15:13:54.715481+08	13 failures in 10 minutes	2026-11-25 15:03:54.715481+08
 \.
 
 
@@ -1364,6 +1390,7 @@ COPY public.security_flags (id, pattern, target, severity, details, flag_date, c
 5	OFF_HOURS_LOGIN	caloymulato@gmail.com	MED	successful login at Wed Nov 25 2026 00:50:05 GMT+0800 (Singapore Standard Time)	2026-11-25	2026-11-25 12:34:12.722695+08
 6	OFF_HOURS_LOGIN	jamestermulato+device@gmail.com	MED	successful login at Wed Nov 25 2026 02:15:00 GMT+0800 (Singapore Standard Time)	2026-11-25	2026-11-25 12:34:12.725276+08
 18	OTP_GUESSING	jamestermulato+h2372@gmail.com	MED	6 wrong OTPs in 10 minutes	2026-11-25	2026-11-25 12:35:08.62589+08
+25	IP_OVER_THRESHOLD	203.0.113.77	HIGH	13 failures, 13 usernames	2026-11-25	2026-11-25 15:41:56.729659+08
 \.
 
 
@@ -1411,8 +1438,8 @@ COPY public.users (id, auth_provider, auth_provider_uid, email, display_name, av
 4acbcb7b-a2d2-46bb-85bb-ab4169ebd287	password	jamestermulato+admin@gmail.com	jamestermulato+admin@gmail.com	Tahanan Admin	\N	2026-11-25 12:28:16.182634+08	2026-11-25 12:28:16.182634+08	scrypt$16384$8$1$XfdJApZBbZjoK+yyoRpRNw==$Zy6rm+lLiRO3dg1N4i+Crw/S/DZP/BmqQFQkHfQqQjfJH92p1OFG59Q8s3/mjFsv5uocAagLNTebKn4S+ezI/w==	0	\N	\N	2026-11-25 12:28:16.182634+08	0	active	2026-11-25 12:28:16.182634+08	tahananadmin	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	2026-11-25 12:28:16.182634+08	\N
 e5def9b7-8de0-49a0-a9dc-7d43f2f9cfb5	password	jamestermulato+device@gmail.com	jamestermulato+device@gmail.com	Device Test	\N	2026-11-25 12:28:16.578467+08	2026-11-25 12:28:16.578467+08	scrypt$16384$8$1$J+UcM6LWkJ5V7aKYYC30hA==$bsYpQIn68q2P7emaxWz8CgOGNwHRT6f+iy+na4LboVkfW7UULJYHERESnH/ayHRI/b3M3KK4zPD2mCa2b2ejlQ==	0	\N	\N	2026-11-25 12:28:16.578467+08	0	active	2026-11-25 12:28:16.578467+08	devicetest	2026-0001	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	2026-11-25 12:28:16.578467+08	\N
 41f0f5bc-3783-4a85-b7de-d35013a3e53c	password	caloymulato@gmail.com	caloymulato@gmail.com	Israel Panamogan	\N	2026-11-25 00:49:35.25398+08	2026-11-25 12:38:29.906136+08	scrypt$16384$8$1$0BhYfmUznYrXDD1HkyZ1JQ==$0DnrrZLN19cW8TWWCbdVrVfgIvyu4ZxpAxRz9itabC/+dJFkynKYasH4E9H+BOnws4SohkmxT3DWWqIINSuJfg==	0	\N	\N	2026-11-25 00:49:35.25398+08	1	active	2026-11-25 00:49:35.25398+08	israel123	2024-0032	Israel	\N	Panamogan	\N	1998-01-01	28	Purok 3	San Jose	Butuan City	Agusan Del Norte	Philippines	8600	E7AGltjun125LnA12pA=	N96fXgKvxDUb8Nc5	Ld1ofUFQEb5R6OgQXOJu2A==	2fcc5d67805689ee2cf48a80375121b4cc0951d62cbf3d1417f3b8af48cebf84	2026-11-25	Single	09123456789	\N	f	2026-11-25 00:50:05.170376+08	2026-11-25 12:38:29.906136+08
-35abeb06-cba5-4a42-a757-2f5eca443dcd	password	jamestermulato@gmail.com	jamestermulato@gmail.com	Jamester Mulato	\N	2026-11-10 21:22:58.545081+08	2026-11-25 12:49:15.519961+08	scrypt$16384$8$1$1BU0H/kxvcNYqOAWT0VugQ==$Xjg+JkOT9MsJwRD1YkqbJC2H/h0fMYAXNVlJvmFUAhtWp8ic6d76+9NKS/9wQdjEwTaMlsAt6GFKmVJti5QfDg==	0	\N	2026-11-25 00:27:19.228227+08	2026-11-25 00:27:11.056149+08	15	active	\N	jamester123	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	2026-11-13 18:28:59.414826+08	2026-11-25 12:38:28.709585+08
-07b41a06-dc31-4a61-8a15-cd3149a95c76	password	jamestermulato+h2372@gmail.com	jamestermulato+h2372@gmail.com	Hand Test	\N	2026-11-25 12:28:16.921064+08	2026-11-25 12:53:44.534518+08	scrypt$16384$8$1$VfD0YL/JUyxN+4QwpncTFg==$t7E2T9nlIzOZgQDFC2WYnOCHevvo2kBsgZbyWaL1AZBcs+quVyfUFCvitmhcZ+Iko62RZoIoElRV9frqiAfvBA==	0	\N	\N	2026-11-25 12:28:16.921064+08	0	active	2026-11-25 12:28:16.921064+08	hand2372	2027-2372	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	x2I9b9qsJUN6fKHXYWA=	DFuZg9G+tEfKo6xR	A7zD3Uwr2Zn2+B3PtBmA4g==	17bb9495b0d3f882cbccd04f428f7803b497c417bdc8799a3ee08f0dc8691930	\N	\N	\N	\N	f	2026-11-25 12:28:16.921064+08	\N
+07b41a06-dc31-4a61-8a15-cd3149a95c76	password	jamestermulato+h2372@gmail.com	jamestermulato+h2372@gmail.com	Hand Test	\N	2026-11-25 12:28:16.921064+08	2026-11-25 15:35:56.620638+08	scrypt$16384$8$1$VfD0YL/JUyxN+4QwpncTFg==$t7E2T9nlIzOZgQDFC2WYnOCHevvo2kBsgZbyWaL1AZBcs+quVyfUFCvitmhcZ+Iko62RZoIoElRV9frqiAfvBA==	3	2026-11-25 15:36:12.620638+08	\N	2026-11-25 12:28:16.921064+08	0	active	2026-11-25 12:28:16.921064+08	hand2372	2027-2372	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	x2I9b9qsJUN6fKHXYWA=	DFuZg9G+tEfKo6xR	A7zD3Uwr2Zn2+B3PtBmA4g==	17bb9495b0d3f882cbccd04f428f7803b497c417bdc8799a3ee08f0dc8691930	\N	\N	\N	\N	f	2026-11-25 12:28:16.921064+08	\N
+35abeb06-cba5-4a42-a757-2f5eca443dcd	password	jamestermulato@gmail.com	jamestermulato@gmail.com	Jamester Mulato	\N	2026-11-10 21:22:58.545081+08	2026-11-25 15:03:38.196978+08	scrypt$16384$8$1$1BU0H/kxvcNYqOAWT0VugQ==$Xjg+JkOT9MsJwRD1YkqbJC2H/h0fMYAXNVlJvmFUAhtWp8ic6d76+9NKS/9wQdjEwTaMlsAt6GFKmVJti5QfDg==	0	\N	2026-11-25 00:27:19.228227+08	2026-11-25 00:27:11.056149+08	15	active	\N	jamester123	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	2026-11-13 18:28:59.414826+08	2026-11-25 12:38:28.709585+08
 \.
 
 
@@ -1420,7 +1447,7 @@ e5def9b7-8de0-49a0-a9dc-7d43f2f9cfb5	password	jamestermulato+device@gmail.com	ja
 -- Name: auth_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.auth_events_id_seq', 378, true);
+SELECT pg_catalog.setval('public.auth_events_id_seq', 403, true);
 
 
 --
@@ -1434,7 +1461,7 @@ SELECT pg_catalog.setval('public.password_history_id_seq', 20, true);
 -- Name: security_flags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.security_flags_id_seq', 23, true);
+SELECT pg_catalog.setval('public.security_flags_id_seq', 31, true);
 
 
 --
@@ -2292,5 +2319,5 @@ ALTER TABLE ONLY public.tenants
 -- PostgreSQL database dump complete
 --
 
-\unrestrict OOcNGHU061e5gmmQOjpCYUQglg2vjMLXQwYT3MXfxzIVcCe2qM4qUyrdQ0cXhlb
+\unrestrict lC8AHDGv4JadKKmSJHMmVTvoPoef0JNA056r6qiSLWMxfTeSpOBESnbyJZXgupR
 
