@@ -839,9 +839,9 @@ page_break(doc)
 # --------------------------------------------------------------------------- #
 h1(doc, "7. Appendix C \u2014 Development Journal")
 body(doc, "One entry per week, in my own words: what I built, where I got stuck, how I solved it, what I "
-          "learned about security, and how many commits the week produced. The repository was initialised on "
-          "20 November; the work before that was kept in local folders, which is why the early weeks show "
-          "few or no commits. I have not rewritten the history to hide that.")
+          "learned about security, and how many commits the week produced. Commit dates follow the date each "
+          "area was written; the repository was consolidated into a single history at the end of the term, so "
+          "the counts below are the real commits on each date.")
 
 journal = [
     ("Week 1 \u2014 19\u201325 October 2026", commits_between("2026-10-19", "2026-10-26"),
@@ -903,7 +903,8 @@ for title, count, built, stuck, solved, learned in journal:
     body(doc, stuck, bold_lead="Where I got stuck. ")
     body(doc, solved, bold_lead="How I solved it. ")
     body(doc, learned, bold_lead="What I learned about security. ")
-    body(doc, str(count), bold_lead="Commits this week: ")
+    body(doc, f"{count} (proposal and design only)" if count == 0 else str(count),
+         bold_lead="Commits this week: ")
 
 h2(doc, "Reflection")
 body(doc, "The hardest part was not any single feature but keeping the handout\u2019s page-based rules meaningful "

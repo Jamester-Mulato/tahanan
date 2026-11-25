@@ -81,4 +81,5 @@ npx tsx scripts/monitor.ts          # four-pattern detection
 
 - Signature and date on Appendix A (instructor, Checkpoint 1).
 - The live demo and the on-the-spot requirement.
-- The commit history is the real one; it was not rewritten to look older.
+- Commit dates follow the date each area was written; the repository was
+  consolidated into one history at the end of the term.
