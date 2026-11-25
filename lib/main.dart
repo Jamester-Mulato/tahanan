@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import 'core/app_colors.dart';
 import 'core/app_motion.dart';
 import 'core/app_theme.dart';
 import 'core/server_config.dart';
+import 'services/error_reporter.dart';
 import 'screens/houses.dart';
 import 'screens/login.dart';
 import 'screens/owner.dart';
@@ -21,6 +24,12 @@ import 'widgets/idle_session_guard.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ServerConfig.load();
+
+  ErrorReporter.install();
+  PlatformDispatcher.instance.onError = (error, stack) {
+    ErrorReporter.report(error.toString(), stack);
+    return true;
+  };
 
   // Reveal-on-scroll should answer the thumb, not a half-second polling tick.
   VisibilityDetectorController.instance.updateInterval =

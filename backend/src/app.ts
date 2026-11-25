@@ -15,6 +15,8 @@ import { announcementRouter } from "./routes/announcement.routes";
 import { concernRouter } from "./routes/concern.routes";
 import { dashboardRouter } from "./routes/dashboard.routes";
 import { adminRouter } from "./routes/admin.routes";
+import { adminConsoleRouter } from "./routes/admin-console.routes";
+import { clientErrorsRouter } from "./routes/client-errors.routes";
 import { recaptchaPage } from "./views/recaptcha-page";
 
 import path from "node:path";
@@ -101,6 +103,8 @@ app.use("/api/announcements", announcementRouter);
 app.use("/api/concerns", concernRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/admin/console", adminConsoleRouter);
+app.use("/api/client-errors", clientErrorsRouter);
 
 // Unknown paths (including .php/.js probes) answer with a plain 404 so the
 // server never reveals source files or a framework error page.

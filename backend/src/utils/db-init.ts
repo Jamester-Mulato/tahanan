@@ -81,6 +81,13 @@ async function initializeOrVerifySchema(schema: string, expectedChecksum: string
     );
     await db.query(baseline);
     console.log("[DB] handout baseline ensured");
+
+    const adminConsole = await fs.readFile(
+      path.resolve(process.cwd(), "sql/009_admin_console.sql"),
+      "utf8"
+    );
+    await db.query(adminConsole);
+    console.log("[DB] admin console schema ensured");
   } finally {
     await db.end();
   }
