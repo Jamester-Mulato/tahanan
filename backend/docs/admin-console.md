@@ -1,11 +1,18 @@
 # Admin console
 
-Full backend control for accounts with `users.is_admin = true`.
+A standalone website for accounts with `users.is_admin = true`. It is **not**
+part of the Flutter app — the app only reports client errors to it.
 
-Open it in the app: **More → Admin console** (the row appears only for
-admins). Everything it does goes through `/api/admin/console`; every
-privileged action is appended to `admin_audit` with the acting admin, IP and
-timestamp.
+- Local: <http://localhost:8080/admin>
+- Tailnet: <https://desktop-3qsl3r1.tailaeee27.ts.net/admin>
+
+The page signs in with the same admin credentials as the app (username,
+password, then the 6-digit email code). Non-admin accounts are refused after
+the OTP step, and every `/api/admin/console` route re-checks `is_admin` on the
+server. On Tailscale the site is reachable only from devices on the tailnet.
+
+Everything it does goes through `/api/admin/console`; every privileged action
+is appended to `admin_audit` with the acting admin, IP and timestamp.
 
 ## Tabs
 

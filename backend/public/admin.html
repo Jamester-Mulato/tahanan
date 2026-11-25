@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tahanan Admin</title>
+<style>
+  :root{
+    --bg:#0a120d; --panel:#111b15; --panel2:#16241c; --line:#223529;
+    --text:#e8f3ec; --muted:#9bb3a5; --accent:#3ddc84; --danger:#ff6b6b;
+    --warn:#f5b942; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  a{color:var(--accent)}
+  .hidden{display:none!important}
+  .center{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px}
+  .login{width:100%;max-width:430px;padding:28px}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,#0b4d2f,#16a356);display:grid;place-items:center;font-weight:800;font-size:20px;color:#fff}
+  .brand h1{font-size:18px;margin:0}
+  .brand p{margin:0;color:var(--muted);font-size:11px;letter-spacing:1.2px;text-transform:uppercase}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px}
+  input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 13px;font:inherit;outline:none}
+  input:focus,textarea:focus{border-color:var(--accent)}
+  textarea{font-family:var(--mono);font-size:13px;resize:vertical}
+  button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:600;background:var(--accent);color:#06210f}
+  button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  button.small{padding:7px 10px;font-size:12px;border-radius:9px}
+  button.danger{background:transparent;color:var(--danger);border:1px solid #491f1f}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .error{color:var(--danger);font-size:12px;margin-top:12px;min-height:18px}
+  .hint{color:var(--muted);font-size:11px}
+  header.top{display:flex;align-items:center;gap:18px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:10;flex-wrap:wrap}
+  header.top .brand{margin:0}
+  nav{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+  nav button{background:transparent;color:var(--muted);border:1px solid transparent;padding:8px 14px}
+  nav button.active{color:var(--text);border-color:var(--line);background:var(--panel2)}
+  main{padding:22px;max-width:1400px;margin:0 auto}
+  section{display:none}
+  section.active{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .stat b{display:block;font-size:24px;line-height:1.1}
+  .stat span{color:var(--muted);font-size:11px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  h2{font-size:15px;margin:22px 0 10px}
+  h3{font-size:13px;margin:0 0 8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+  pre{background:#0b140f;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;margin:0}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;border:1px solid var(--line)}
+  .pill.admin{color:var(--accent);border-color:#1d5a37}
+  .pill.off{color:var(--warn);border-color:#5a4a1d}
+  .tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+  .table-btn{display:flex;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-weight:500}
+  .table-btn:hover{border-color:var(--accent)}
+  .table-btn small{color:var(--muted)}
+  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px;max-width:900px;width:92vw;padding:16px}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--panel2);border:1px solid var(--line);padding:12px 16px;border-radius:12px;font-size:13px;opacity:0;transform:translateY(8px);transition:.2s}
+  .toast.show{opacity:1;transform:none}
+  .spacer{flex:1}
+  code{font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="center">
+  <div class="card login">
+    <div class="brand">
+      <div class="logo">T</div>
+      <div><h1>Tahanan Admin</h1><p>Backend &amp; database console</p></div>
+    </div>
+
+    <div id="stepPassword">
+      <label>Username</label>
+      <input id="username" autocomplete="username" placeholder="admin account">
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="password">
+      <label>CAPTCHA — <span id="captchaQuestion">loading…</span></label>
+      <div class="row">
+        <input id="captchaAnswer" style="flex:1" placeholder="answer" inputmode="numeric">
+        <button class="ghost small" onclick="refreshCaptcha()">New</button>
+      </div>
+      <div class="error" id="loginError"></div>
+      <button style="width:100%;margin-top:6px" onclick="submitPassword()" id="passwordBtn">Continue</button>
+      <p class="hint" style="margin-top:12px">A 6-digit code will be emailed to the admin address.</p>
+    </div>
+
+    <div id="stepOtp" class="hidden">
+      <h2 style="margin-top:0">Enter the email code</h2>
+      <p class="hint" id="otpMasked"></p>
+      <label>6-digit code</label>
+      <input id="otpCode" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:6px;font-family:var(--mono);font-size:20px;text-align:center">
+      <div class="error" id="otpError"></div>
+      <button style="width:100%" onclick="submitOtp()" id="otpBtn">Verify</button>
+      <div class="row" style="margin-top:10px">
+        <button class="ghost small" onclick="resendOtp()">Resend code</button>
+        <button class="ghost small" onclick="backToLogin()">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONSOLE -->
+<div id="console" class="hidden">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">T</div>
+      <div><h1 style="font-size:15px">Tahanan Admin</h1><p id="whoami">—</p></div>
+    </div>
+    <nav id="tabs">
+      <button class="active" data-tab="overview">Overview</button>
+      <button data-tab="database">Database</button>
+      <button data-tab="logs">Logs</button>
+      <button data-tab="users">Users</button>
+    </nav>
+    <button class="ghost small" onclick="signOut()">Sign out</button>
+  </header>
+
+  <main>
+    <section id="tab-overview" class="active">
+      <div class="grid" id="stats"></div>
+      <h2>Server</h2>
+      <div class="panel" id="serverInfo">Loading…</div>
+      <h2>Recent admin actions</h2>
+      <div class="panel" id="audit">Loading…</div>
+    </section>
+
+    <section id="tab-database">
+      <h2 style="margin-top:0">SQL console</h2>
+      <div class="panel">
+        <textarea id="sqlText" rows="6" placeholder="SELECT * FROM users;"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button onclick="runSql()" id="sqlBtn">Run</button>
+          <span class="hint">Runs immediately as the database role. Write statements ask for confirmation.</span>
+        </div>
+        <pre id="sqlResult" class="hidden" style="margin-top:12px"></pre>
+      </div>
+      <h2>Tables</h2>
+      <div class="tables" id="tableList">Loading…</div>
+    </section>
+
+    <section id="tab-logs">
+      <div class="row" style="margin-bottom:12px">
+        <button class="ghost small" id="btnClient" onclick="showLogs('client')">Client errors</button>
+        <button class="ghost small" id="btnServer" onclick="showLogs('server')">Server log</button>
+        <span class="spacer"></span>
+        <button class="danger small" onclick="clearClientErrors()" id="clearErrors">Clear client errors</button>
+        <button class="ghost small" onclick="loadLogs()">Refresh</button>
+      </div>
+      <div id="logContent">Loading…</div>
+    </section>
+
+    <section id="tab-users">
+      <div class="row" style="margin-bottom:12px">
+        <span class="hint">Accounts, roles and sessions. Every action is audited.</span>
+        <span class="spacer"></span>
+        <button class="ghost small" onclick="loadUsers()">Refresh</button>
+      </div>
+      <div id="userList">Loading…</div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<dialog id="rowDialog">
+  <div class="row"><h3 id="rowTitle" style="margin:0"></h3><span class="spacer"></span><button class="ghost small" onclick="document.getElementById('rowDialog').close()">Close</button></div>
+  <pre id="rowBody" style="margin-top:12px"></pre>
+</dialog>
+
+<script>
+const TOKEN_KEY = 'tahanan_admin_token';
+let token = sessionStorage.getItem(TOKEN_KEY) || '';
+let challengeId = '';
+let captchaId = '';
+let logMode = 'client';
+let me = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(message) {
+  const el = $('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+async function api(path, options = {}) {
+  const { method = 'GET', body, auth = true } = options;
+  const res = await fetch(path, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth && token ? { Authorization: 'Bearer ' + token } : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { message: text }; }
+  if (!res.ok) {
+    const err = new Error((data && (data.message || data.error)) || ('Request failed (' + res.status + ')'));
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+/* ---------------- login ---------------- */
+async function refreshCaptcha() {
+  try {
+    const data = await api('/api/auth/captcha', { auth: false });
+    captchaId = data.id;
+    $('captchaQuestion').textContent = data.question;
+  } catch (err) {
+    $('captchaQuestion').textContent = 'could not load';
+  }
+}
+
+function backToLogin() {
+  $('stepOtp').classList.add('hidden');
+  $('stepPassword').classList.remove('hidden');
+  refreshCaptcha();
+}
+
+async function submitPassword() {
+  const username = $('username').value.trim();
+  const password = $('password').value;
+  const captchaAnswer = $('captchaAnswer').value.trim();
+  $('loginError').textContent = '';
+  if (!username || !password) { $('loginError').textContent = 'Enter your username and password.'; return; }
+  if (!captchaAnswer) { $('loginError').textContent = 'Answer the CAPTCHA.'; return; }
+  $('passwordBtn').disabled = true;
+  try {
+    const data = await api('/api/auth/login', {
+      method: 'POST',
+      auth: false,
+      body: { username, password, captchaId, captchaAnswer }
+    });
+    challengeId = data.challengeId;
+    $('otpMasked').textContent = 'Code sent to ' + (data.maskedEmail || 'your email') + '.';
+    $('stepPassword').classList.add('hidden');
+    $('stepOtp').classList.remove('hidden');
+    $('otpCode').focus();
+  } catch (err) {
+    $('loginError').textContent = err.message;
+    refreshCaptcha();
+  } finally {
+    $('passwordBtn').disabled = false;
+  }
+}
+
+async function submitOtp() {
+  const code = $('otpCode').value.trim();
+  $('otpError').textContent = '';
+  if (!/^\d{6}$/.test(code)) { $('otpError').textContent = 'Enter the 6-digit code.'; return; }
+  $('otpBtn').disabled = true;
+  try {
+    const data = await api('/api/auth/login/verify-otp', {
+      method: 'POST',
+      auth: false,
+      body: { challengeId, code }
+    });
+    if (!data.user || !data.user.isAdmin) {
+      $('otpError').textContent = 'This account is not an administrator.';
+      return;
+    }
+    token = data.accessToken;
+    me = data.user;
+    sessionStorage.setItem(TOKEN_KEY, token);
+    startConsole();
+  } catch (err) {
+    $('otpError').textContent = err.message;
+  } finally {
+    $('otpBtn').disabled = false;
+  }
+}
+
+async function resendOtp() {
+  try {
+    const data = await api('/api/auth/login/resend-otp', {
+      method: 'POST',
+      auth: false,
+      body: { challengeId }
+    });
+    toast('New code sent to ' + (data.maskedEmail || 'your email'));
+  } catch (err) {
+    $('otpError').textContent = err.message;
+  }
+}
+
+function signOut() {
+  token = '';
+  me = null;
+  sessionStorage.removeItem(TOKEN_KEY);
+  $('console').classList.add('hidden');
+  $('loginScreen').classList.remove('hidden');
+  $('stepOtp').classList.add('hidden');
+  $('stepPassword').classList.remove('hidden');
+  $('password').value = '';
+  $('otpCode').value = '';
+  refreshCaptcha();
+}
+
+/* ---------------- console ---------------- */
+document.querySelectorAll('#tabs button').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('#tabs button').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('main section').forEach((s) => s.classList.remove('active'));
+    button.classList.add('active');
+    $('tab-' + button.dataset.tab).classList.add('active');
+    if (button.dataset.tab === 'logs') loadLogs();
+  });
+});
+
+function startConsole() {
+  $('loginScreen').classList.add('hidden');
+  $('console').classList.remove('hidden');
+  $('whoami').textContent = (me && me.username ? me.username : 'admin');
+  loadOverview();
+  loadTables();
+  loadLogs();
+  loadUsers();
+}
+
+async function loadOverview() {
+  try {
+    const [overview, audit] = await Promise.all([
+      api('/api/admin/console/overview'),
+      api('/api/admin/console/audit')
+    ]);
+    const fields = [
+      ['Users', overview.users], ['Admins', overview.admins],
+      ['Houses', overview.houses], ['Rooms', overview.rooms],
+      ['Tenants', overview.tenants], ['Announcements', overview.announcements],
+      ['Concerns', overview.concerns], ['Client errors', overview.client_errors],
+      ['Errors / 24h', overview.client_errors_24h], ['Auth events', overview.auth_events]
+    ];
+    $('stats').innerHTML = fields.map(([label, value]) =>
+      '<div class="stat"><b>' + esc(value) + '</b><span>' + esc(label) + '</span></div>'
+    ).join('');
+
+    $('serverInfo').innerHTML =
+      '<div class="row" style="gap:24px">' +
+      '<div><h3>Database</h3><code>' + esc(overview.db_size) + '</code></div>' +
+      '<div><h3>PostgreSQL</h3><code>' + esc(overview.database) + '</code></div>' +
+      '<div><h3>Node</h3><code>' + esc(overview.node) + '</code></div>' +
+      '<div><h3>Uptime</h3><code>' + esc(overview.uptimeSeconds) + ' s</code></div>' +
+      '<div><h3>Environment</h3><code>' + esc(overview.environment) + '</code></div>' +
+      '</div>';
+
+    const entries = audit.entries || [];
+    $('audit').innerHTML = entries.length
+      ? '<table><thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Details</th></tr></thead><tbody>' +
+        entries.map((entry) => '<tr><td>' + esc(entry.created_at) + '</td><td>' + esc(entry.username || 'system') +
+          '</td><td>' + esc(entry.action) + '</td><td><code>' + esc(JSON.stringify(entry.details || {})) + '</code></td></tr>').join('') +
+        '</tbody></table>'
+      : '<span class="hint">Nothing yet.</span>';
+  } catch (err) {
+    if (err.status === 401 || err.status === 403) return signOut();
+    toast(err.message);
+  }
+}
+
+async function loadTables() {
+  try {
+    const data = await api('/api/admin/console/tables');
+    $('tableList').innerHTML = (data.tables || []).map((table) =>
+      '<button class="table-btn" onclick="openTable(\'' + esc(table.name) + '\')">' +
+      '<span>' + esc(table.name) + '</span><small>~' + esc(table.estimated_rows) + '</small></button>'
+    ).join('');
+  } catch (err) {
+    $('tableList').textContent = err.message;
+  }
+}
+
+async function openTable(name) {
+  try {
+    const data = await api('/api/admin/console/tables/' + encodeURIComponent(name) + '?limit=50');
+    $('rowTitle').textContent = name + ' — ' + data.total + ' row(s)';
+    $('rowBody').textContent = (data.rows || []).length
+      ? data.rows.map((row) => JSON.stringify(row, null, 2)).join('\n\n')
+      : 'No rows.';
+    $('rowDialog').showModal();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+async function runSql() {
+  const sql = $('sqlText').value.trim();
+  if (!sql) return;
+  if (!/^\s*(select|show|explain|with)\b/i.test(sql)) {
+    if (!confirm('This statement can change or delete data.\n\n' + sql.slice(0, 400) + '\n\nRun it?')) return;
+  }
+  $('sqlBtn').disabled = true;
+  try {
+    const data = await api('/api/admin/console/sql', { method: 'POST', body: { sql } });
+    $('sqlResult').classList.remove('hidden');
+    $('sqlResult').textContent = data.command + ' · ' + data.rowCount + ' row(s)\n\n' +
+      JSON.stringify(data.rows, null, 2);
+    loadOverview();
+  } catch (err) {
+    $('sqlResult').classList.remove('hidden');
+    $('sqlResult').textContent = 'ERROR: ' + err.message;
+  } finally {
+    $('sqlBtn').disabled = false;
+  }
+}
+
+function showLogs(mode) {
+  logMode = mode;
+  $('btnClient').classList.toggle('active', mode === 'client');
+  $('btnServer').classList.toggle('active', mode === 'server');
+  $('clearErrors').classList.toggle('hidden', mode !== 'client');
+  loadLogs();
+}
+
+async function loadLogs() {
+  try {
+    if (logMode === 'server') {
+      const data = await api('/api/admin/console/error-log?lines=200');
+      $('logContent').innerHTML = '<pre>' + esc((data.lines || []).join('\n') || 'No server errors logged.') + '</pre>';
+      return;
+    }
+    const data = await api('/api/admin/console/client-errors?limit=100');
+    const errors = data.errors || [];
+    $('logContent').innerHTML = errors.length
+      ? errors.map((error) =>
+          '<div class="panel"><div class="row"><strong>' + esc(error.message) + '</strong><span class="spacer"></span>' +
+          '<span class="hint">' + esc(error.created_at) + '</span></div>' +
+          '<div class="hint">' + esc(error.username || 'anonymous') + ' · ' + esc(error.platform || 'unknown') +
+          ' · v' + esc(error.app_version || '?') + ' · ' + esc(error.ip_address || '') + '</div>' +
+          (error.stack ? '<pre style="margin-top:10px;max-height:220px">' + esc(error.stack) + '</pre>' : '') +
+          '</div>').join('')
+      : '<div class="panel hint">No client errors reported.</div>';
+  } catch (err) {
+    $('logContent').textContent = err.message;
+  }
+}
+
+async function clearClientErrors() {
+  if (!confirm('Delete every client error report?')) return;
+  try {
+    const data = await api('/api/admin/console/client-errors', { method: 'DELETE' });
+    toast('Cleared ' + (data.removed || 0) + ' report(s).');
+    loadLogs();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+async function loadUsers() {
+  try {
+    const data = await api('/api/admin/console/users');
+    const users = data.users || [];
+    $('userList').innerHTML = '<table><thead><tr><th>User</th><th>Status</th><th>Houses</th><th>Last login</th><th></th></tr></thead><tbody>' +
+      users.map((user) => '<tr>' +
+        '<td><strong>' + esc(user.username) + '</strong><br><span class="hint">' + esc(user.email) + '</span></td>' +
+        '<td><span class="pill ' + (user.is_admin ? 'admin' : '') + '">' + (user.is_admin ? 'admin' : 'member') + '</span> ' +
+          '<span class="pill ' + (user.status !== 'active' ? 'off' : '') + '">' + esc(user.status) + '</span></td>' +
+        '<td>' + esc(user.owned_houses) + '</td>' +
+        '<td class="hint">' + esc(user.last_login_at || 'never') + '</td>' +
+        '<td><div class="row" style="gap:6px">' +
+          '<button class="ghost small" onclick="toggleAdmin(\'' + user.id + '\',' + (!user.is_admin) + ')">' +
+            (user.is_admin ? 'Demote' : 'Make admin') + '</button>' +
+          '<button class="ghost small" onclick="toggleStatus(\'' + user.id + '\',\'' + (user.status === 'active' ? 'disabled' : 'active') + '\')">' +
+            (user.status === 'active' ? 'Disable' : 'Enable') + '</button>' +
+          '<button class="ghost small" onclick="logoutAll(\'' + user.id + '\',\'' + esc(user.username) + '\')">Sign out</button>' +
+          '<button class="danger small" onclick="deleteUser(\'' + user.id + '\',\'' + esc(user.username) + '\')">Delete</button>' +
+        '</div></td></tr>').join('') + '</tbody></table>';
+  } catch (err) {
+    $('userList').textContent = err.message;
+  }
+}
+
+async function toggleAdmin(id, isAdmin) {
+  try {
+    await api('/api/admin/console/users/' + id, { method: 'PATCH', body: { is_admin: isAdmin } });
+    toast(isAdmin ? 'Admin access granted.' : 'Admin access removed.');
+    loadUsers();
+    loadOverview();
+  } catch (err) { toast(err.message); }
+}
+
+async function toggleStatus(id, status) {
+  try {
+    await api('/api/admin/console/users/' + id, { method: 'PATCH', body: { status } });
+    toast('Account ' + status + '.');
+    loadUsers();
+    loadOverview();
+  } catch (err) { toast(err.message); }
+}
+
+async function logoutAll(id, username) {
+  if (!confirm('Sign ' + username + ' out of every device?')) return;
+  try {
+    await api('/api/admin/console/users/' + id + '/logout-all', { method: 'POST' });
+    toast(username + ' signed out everywhere.');
+  } catch (err) { toast(err.message); }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm('Delete ' + username + '?\n\nThe account and every house it owns (with rooms and content) are removed. This cannot be undone.')) return;
+  try {
+    await api('/api/admin/console/users/' + id, { method: 'DELETE' });
+    toast(username + ' deleted.');
+    loadUsers();
+    loadOverview();
+  } catch (err) { toast(err.message); }
+}
+
+/* ---------------- boot ---------------- */
+(async function boot() {
+  refreshCaptcha();
+  if (!token) return;
+  try {
+    const meData = await api('/api/me');
+    if (!meData.isAdmin && !(meData.user && meData.user.isAdmin)) {
+      signOut();
+      return;
+    }
+    me = meData.user || meData;
+    startConsole();
+  } catch {
+    signOut();
+  }
+})();
+</script>
+</body>
+</html>

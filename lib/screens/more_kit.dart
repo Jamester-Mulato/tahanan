@@ -34,9 +34,6 @@ class MoreBody extends StatelessWidget {
   /// Admin-only. Shown only when the signed-in account has `is_admin`.
   final VoidCallback? onAdminSecurity;
 
-  /// Admin-only. Full database / logs / user console.
-  final VoidCallback? onAdminConsole;
-
   /// Admin-only. Opens the server-address dialog for this device.
   final VoidCallback? onServerAddress;
 
@@ -52,7 +49,6 @@ class MoreBody extends StatelessWidget {
     required this.onCopyKey,
     required this.onChangePassword,
     this.onAdminSecurity,
-    this.onAdminConsole,
     this.onServerAddress,
   });
 
@@ -211,9 +207,7 @@ class MoreBody extends StatelessWidget {
                 title: 'Security',
               ),
               if (user?.isAdmin == true &&
-                  (onAdminSecurity != null ||
-                      onAdminConsole != null ||
-                      onServerAddress != null)) ...[
+                  (onAdminSecurity != null || onServerAddress != null)) ...[
                 _SettingsGroup(
                   children: [
                     if (onAdminSecurity != null)
@@ -222,13 +216,6 @@ class MoreBody extends StatelessWidget {
                         title: 'Security monitoring',
                         subtitle: 'Admin-only activity log and findings',
                         onTap: onAdminSecurity!,
-                      ),
-                    if (onAdminConsole != null)
-                      SettingsTile(
-                        icon: Icons.storage_rounded,
-                        title: 'Admin console',
-                        subtitle: 'Database, SQL, client errors and users',
-                        onTap: onAdminConsole!,
                       ),
                     if (onServerAddress != null)
                       SettingsTile(

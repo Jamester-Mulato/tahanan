@@ -106,6 +106,26 @@ app.use("/api/admin", adminRouter);
 app.use("/api/admin/console", adminConsoleRouter);
 app.use("/api/client-errors", clientErrorsRouter);
 
+// Standalone admin console (not part of the Flutter app). Same origin as the
+// API, so the page talks to /api/admin/console with a bearer token.
+const adminPage = path.resolve(process.cwd(), "public", "admin.html");
+app.get(["/admin", "/admin/"], (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'"
+    ].join("; ")
+  );
+  res.type("html").sendFile(adminPage);
+});
+
 // Unknown paths (including .php/.js probes) answer with a plain 404 so the
 // server never reveals source files or a framework error page.
 app.use((_req, res) => {
