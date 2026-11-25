@@ -56,3 +56,6 @@ app.*.map.json
 /it107-secure/
 /backend_parent/
 
+
+# Office lock files
+~\$*

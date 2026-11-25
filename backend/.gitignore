@@ -7,3 +7,7 @@ dist/
 # Local artifacts that must never ship
 uploads/
 
+
+# Local scratch scripts
+tmp-*.js
+
