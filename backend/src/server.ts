@@ -2,8 +2,13 @@ import { app } from "./app";
 import { env } from "./config/env";
 import { pool } from "./config/db";
 import { initializeDatabase } from "./utils/db-init";
+import dns from "node:dns";
 
 async function main() {
+  // Some networks advertise IPv6 without a working route (SMTP then fails
+  // with ENETUNREACH). Prefer IPv4 for outbound hostnames like smtp.gmail.com.
+  dns.setDefaultResultOrder("ipv4first");
+
   await initializeDatabase();
 
   // Additive migration kept outside 001_schema.sql so the verified schema
