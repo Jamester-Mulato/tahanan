@@ -13,6 +13,9 @@ export const OTP_EXPIRY_MINUTES = 5;
 export const OTP_MAX_ATTEMPTS = 3;
 export const OTP_RESEND_COOLDOWN_SECONDS = 60;
 export const OTP_MAX_RESENDS = 3;
+/** Initial send plus its resends: the one budget every send path draws from. */
+export const OTP_MAX_SENDS = OTP_MAX_RESENDS + 1;
+const OTP_SEND_WINDOW_MINUTES = 15;
 
 export function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
@@ -25,11 +28,33 @@ function sixDigits(): string {
   return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
 }
 
+/**
+ * One send ledger for every path: the number of codes already sent for this
+ * account and purpose inside the window. `start` and `resend` both draw from
+ * it, so neither can spend more than the other believes is left.
+ */
+async function sendsInWindow(
+  userId: string,
+  purpose: OtpPurpose
+): Promise<number> {
+  const counted = await query<{ n: number }>(
+    `SELECT count(*)::int AS n
+       FROM login_otps
+      WHERE user_id = $1
+        AND purpose = $2
+        AND created_at > now() - ($3 || ' minutes')::interval`,
+    [userId, purpose, String(OTP_SEND_WINDOW_MINUTES)]
+  );
+  return counted.rows[0]?.n ?? 0;
+}
+
 export interface OtpChallenge {
   challengeId: string;
   maskedEmail: string;
   expiresIn: number;
   resendIn: number;
+  /** False when the mail transport failed; the code is still valid. */
+  delivered: boolean;
 }
 
 async function deliver(
@@ -41,19 +66,9 @@ async function deliver(
     purpose: OtpPurpose;
     req?: Request;
   }
-): Promise<void> {
+): Promise<boolean> {
   const code = sixDigits();
   const codeHash = await hashPassword(code);
-  await query(
-    `UPDATE login_otps
-        SET code_hash = $2,
-            attempts = 0,
-            used = FALSE,
-            expires_at = now() + ($3 || ' minutes')::interval,
-            last_sent_at = now()
-      WHERE id = $1`,
-    [challengeId, codeHash, String(OTP_EXPIRY_MINUTES)]
-  );
 
   try {
     if (input.purpose === "register") {
@@ -98,8 +113,21 @@ async function deliver(
       req: input.req,
       details: { purpose: input.purpose, reason }
     });
-    return;
+    return false;
   }
+
+  // Persist only after the mail transport accepted the message: a failed send
+  // must not destroy the code the user already has in their inbox.
+  await query(
+    `UPDATE login_otps
+        SET code_hash = $2,
+            attempts = 0,
+            used = FALSE,
+            expires_at = now() + ($3 || ' minutes')::interval,
+            last_sent_at = now()
+      WHERE id = $1`,
+    [challengeId, codeHash, String(OTP_EXPIRY_MINUTES)]
+  );
 
   await logAuthEvent({
     eventType: "OTP_SENT",
@@ -108,6 +136,7 @@ async function deliver(
     req: input.req,
     details: { purpose: input.purpose }
   });
+  return true;
 }
 
 /** Creates a fresh challenge and cancels any previous unused code of that purpose. */
@@ -118,15 +147,8 @@ export async function startOtp(input: {
   purpose: OtpPurpose;
   req?: Request;
 }): Promise<OtpChallenge> {
-  // 60-second cooldown plus at most 3 resends per 15 minutes, per purpose.
-  const recent = await query<{ n: number }>(
-    `SELECT count(*)::int AS n FROM login_otps
-      WHERE user_id = $1
-        AND purpose = $2
-        AND created_at > now() - interval '15 minutes'`,
-    [input.userId, input.purpose]
-  );
-  if ((recent.rows[0]?.n ?? 0) >= OTP_MAX_RESENDS + 1) {
+  // One budget for every send path: four codes per 15 minutes, per purpose.
+  if ((await sendsInWindow(input.userId, input.purpose)) >= OTP_MAX_SENDS) {
     throw new HttpError(
       429,
       "OTP_RESEND_LIMIT",
@@ -147,13 +169,14 @@ export async function startOtp(input: {
   );
 
   const challengeId = created.rows[0].id;
-  await deliver(challengeId, input);
+  const delivered = await deliver(challengeId, input);
 
   return {
     challengeId,
     maskedEmail: maskEmail(input.email),
     expiresIn: OTP_EXPIRY_MINUTES * 60,
-    resendIn: OTP_RESEND_COOLDOWN_SECONDS
+    resendIn: OTP_RESEND_COOLDOWN_SECONDS,
+    delivered
   };
 }
 
@@ -288,7 +311,7 @@ export async function resendOtp(input: {
     throw new HttpError(429, "OTP_COOLDOWN", `Wait ${left} seconds before requesting another code.`, { retryAfter: left });
   }
 
-  if (row.resend_count >= OTP_MAX_RESENDS) {
+  if ((await sendsInWindow(row.user_id, input.purpose)) >= OTP_MAX_SENDS) {
     throw new HttpError(429, "OTP_RESEND_LIMIT", "Too many codes requested. Start again later.");
   }
 
@@ -301,8 +324,7 @@ export async function resendOtp(input: {
     throw new HttpError(401, "OTP_INVALID", "That code is invalid or expired. Request a new one.");
   }
 
-  await query("UPDATE login_otps SET resend_count = resend_count + 1 WHERE id = $1", [row.id]);
-  await deliver(row.id, {
+  const delivered = await deliver(row.id, {
     userId: row.user_id,
     email: identity.email,
     name: identity.display_name,
@@ -310,11 +332,20 @@ export async function resendOtp(input: {
     req: input.req
   });
 
+  if (delivered) {
+    // Informational only; the limit itself comes from the send ledger.
+    await query(
+      "UPDATE login_otps SET resend_count = resend_count + 1 WHERE id = $1",
+      [row.id]
+    );
+  }
+
   return {
     challengeId: row.id,
     maskedEmail: maskEmail(identity.email),
     expiresIn: OTP_EXPIRY_MINUTES * 60,
-    resendIn: OTP_RESEND_COOLDOWN_SECONDS
+    resendIn: OTP_RESEND_COOLDOWN_SECONDS,
+    delivered
   };
 }
 
