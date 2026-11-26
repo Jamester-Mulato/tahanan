@@ -8,6 +8,10 @@ import { requireAdmin } from "../middleware/require-admin";
 import { asyncRoute } from "../utils/async-route";
 import { HttpError } from "../utils/http-error";
 import {
+  deleteAccount,
+  logoutAllSessions
+} from "../services/admin-operations.service";
+import {
   saveSessionSettings,
   sessionSettings
 } from "../services/settings.service";
@@ -349,16 +353,9 @@ adminConsoleRouter.post(
   "/users/:id/logout-all",
   asyncRoute(async (req: AuthenticatedRequest, res) => {
     const id = uuid.parse(req.params.id);
-    await query(
-      "UPDATE users SET token_version = token_version + 1 WHERE id = $1",
-      [id]
-    );
-    const removed = await query(
-      "DELETE FROM auth_refresh_tokens WHERE user_id = $1",
-      [id]
-    );
-    await audit(req, "LOGOUT_ALL", id, { sessions: removed.rowCount });
-    res.json({ ok: true, sessions: removed.rowCount ?? 0 });
+    const sessions = await logoutAllSessions(id, req);
+    await audit(req, "LOGOUT_ALL", id, { sessions });
+    res.json({ ok: true, sessions });
   })
 );
 
@@ -366,106 +363,12 @@ adminConsoleRouter.delete(
   "/users/:id",
   asyncRoute(async (req: AuthenticatedRequest, res) => {
     const id = uuid.parse(req.params.id);
-    if (id === req.authUser!.id) {
-      throw new HttpError(400, "SELF_DELETE", "You cannot delete your own account.");
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      await client.query("ALTER TABLE auth_events DISABLE TRIGGER auth_events_no_change");
-
-      // Houses owned by the account (with their dependent rows).
-      const foreign = "bh.owner_user_id = $1";
-      await client.query(
-        `DELETE FROM tenant_room_assignments tra
-          WHERE tra.room_id IN (
-                  SELECT r.id FROM rooms r JOIN boarding_houses bh ON bh.id = r.boarding_house_id
-                   WHERE ${foreign})
-             OR tra.tenant_id IN (
-                  SELECT t.id FROM tenants t JOIN boarding_houses bh ON bh.id = t.boarding_house_id
-                   WHERE ${foreign})`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM concerns c USING boarding_houses bh
-          WHERE c.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM announcements a USING boarding_houses bh
-          WHERE a.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM tenant_account_associations x USING boarding_houses bh
-          WHERE x.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM tenant_monthly_statuses s USING boarding_houses bh
-          WHERE s.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM academic_years y USING boarding_houses bh
-          WHERE y.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM tenants t USING boarding_houses bh
-          WHERE t.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM rooms r USING boarding_houses bh
-          WHERE r.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query(
-        `DELETE FROM boarding_house_memberships m USING boarding_houses bh
-          WHERE m.boarding_house_id = bh.id AND ${foreign}`,
-        [id]
-      );
-      await client.query("DELETE FROM boarding_houses WHERE owner_user_id = $1", [id]);
-
-      // References in other houses: keep the data, hand it to the acting admin.
-      await client.query("DELETE FROM announcements WHERE author_user_id = $1", [id]);
-      await client.query(
-        "UPDATE tenant_account_associations SET associated_by = $2 WHERE associated_by = $1",
-        [id, req.authUser!.id]
-      );
-      await client.query(
-        "UPDATE tenant_monthly_statuses SET updated_by = $2 WHERE updated_by = $1",
-        [id, req.authUser!.id]
-      );
-      await client.query(
-        "UPDATE tenant_room_assignments SET assigned_by = $2 WHERE assigned_by = $1",
-        [id, req.authUser!.id]
-      );
-      await client.query(
-        "UPDATE boarding_house_memberships SET removed_by = NULL WHERE removed_by = $1",
-        [id]
-      );
-
-      await client.query("DELETE FROM auth_events WHERE user_id = $1", [id]);
-      const deleted = await client.query(
-        "DELETE FROM users WHERE id = $1 RETURNING username, email",
-        [id]
-      );
-      if (!deleted.rowCount) throw new HttpError(404, "USER_NOT_FOUND", "Unknown user.");
-
-      await client.query("ALTER TABLE auth_events ENABLE TRIGGER auth_events_no_change");
-      await client.query("COMMIT");
-
-      await audit(req, "DELETE_USER", id, deleted.rows[0]);
-      res.json({ ok: true, removed: deleted.rows[0] });
-    } catch (error) {
-      await client.query("ROLLBACK").catch(() => undefined);
-      throw error;
-    } finally {
-      client.release();
-    }
+    const removed = await deleteAccount({
+      userId: id,
+      actorId: req.authUser!.id
+    });
+    await audit(req, "DELETE_USER", id, removed);
+    res.json({ ok: true, removed });
   })
 );
 

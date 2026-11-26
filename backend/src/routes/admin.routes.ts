@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../config/db";
 import { requireAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/require-admin";
 import { logAuthEvent } from "../services/auth-events.service";
 import { asyncRoute } from "../utils/async-route";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -10,27 +11,8 @@ export const adminRouter = Router();
 adminRouter.get(
   "/security",
   requireAuth,
+  requireAdmin,
   asyncRoute(async (req: AuthenticatedRequest, res) => {
-    const admin = await query<{ is_admin: boolean }>(
-      "SELECT is_admin FROM users WHERE id = $1",
-      [req.authUser!.id]
-    );
-
-    if (!admin.rows[0]?.is_admin) {
-      await logAuthEvent({
-        eventType: "ADMIN_ACCESS_DENIED",
-        userId: req.authUser!.id,
-        email: req.authUser!.email,
-        req,
-        details: { path: "/api/admin/security" }
-      });
-      res.status(403).json({
-        error: "ACCESS_DENIED",
-        message: "Access denied."
-      });
-      return;
-    }
-
     if (req.query.log !== "0") {
       await logAuthEvent({
         eventType: "ADMIN_VIEWED_DASHBOARD",
@@ -50,7 +32,7 @@ adminRouter.get(
       alerts: number;
     }>(
       `SELECT
-         count(*) FILTER (WHERE event_type IN ('LOGIN_SUCCESS','LOGIN_SUCCEEDED'))::int AS logins,
+         count(*) FILTER (WHERE event_type = 'LOGIN_SUCCESS')::int AS logins,
          count(*) FILTER (WHERE event_type = 'LOGIN_FAILED')::int AS failed,
          (SELECT count(*)::int FROM users WHERE locked_until > now()) AS locked,
          (SELECT count(*)::int FROM ip_blocks WHERE blocked_until > now()) AS blocked,
