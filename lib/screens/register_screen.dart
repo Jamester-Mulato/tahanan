@@ -418,7 +418,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return null;
       default:
         if (!_email.text.contains('@') || !_email.text.contains('.')) {
-          return 'Enter a valid Google account email.';
+          return 'Enter a valid email address.';
         }
         if (_username.text.trim().length < 7) {
           return 'Username must be at least 7 characters.';
@@ -464,7 +464,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String? field;
     if (problem.startsWith('Username')) {
       field = 'username';
-    } else if (problem == 'Enter a valid Google account email.') {
+    } else if (problem == 'Enter a valid email address.') {
       field = 'email';
     } else if (problem.startsWith('Password must')) {
       field = 'password';
@@ -1024,8 +1024,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             _row(wide, [
               PremiumField(
                 controller: _email,
-                label: 'Google account email',
-                hint: 'you@gmail.com',
+                label: 'Email address',
+                hint: 'name@school.edu.ph',
                 icon: Icons.mail_outline_rounded,
                 required: true,
                 keyboardType: TextInputType.emailAddress,

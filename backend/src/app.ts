@@ -142,6 +142,21 @@ app.get(["/admin", "/admin/"], (_req, res) => {
   res.type("html").sendFile(adminPage);
 });
 
+// Serve the Flutter web build from the same origin, so the whole product can
+// live behind one Tailscale HTTPS endpoint: / = web app, /admin = console,
+// /api = API. Skipped on hosts that deploy only the API (for example Render).
+const webBuildDir = path.resolve(process.cwd(), "..", "build", "web");
+if (fs.existsSync(path.join(webBuildDir, "index.html"))) {
+  app.use(express.static(webBuildDir, { index: "index.html" }));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    if (/^\/(api|admin|recaptcha|uploads|health)(\/|$)/.test(req.path)) {
+      return next();
+    }
+    res.sendFile(path.join(webBuildDir, "index.html"));
+  });
+}
+
 // Unknown paths (including .php/.js probes) answer with a plain 404 so the
 // server never reveals source files or a framework error page.
 app.use((_req, res) => {
