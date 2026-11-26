@@ -23,7 +23,7 @@ import {
   revokePasswordResetTokens
 } from "./password-reset.service";
 import {
-  sendLockoutAlert,
+  sendFailedLoginAlert,
   sendPasswordChangedAlert,
   sendPasswordResetCode
 } from "./mail.service";
@@ -232,11 +232,6 @@ async function registerFailedAttempt(
       [String(seconds), user.id]
     );
 
-    // One alert per tier, never once per attempt (handout 9). Failures past
-    // nine still extend the tier-3 lock, but they do not send another e-mail.
-    const atTierBoundary = count === 3 || count === 6 || count === 9;
-    if (!atTierBoundary) return seconds;
-
     await logAuthEvent({
       eventType:
         count >= 9
@@ -249,35 +244,38 @@ async function registerFailedAttempt(
       req,
       details: { attempts: count, seconds }
     });
-    try {
-      await sendLockoutAlert({
-        to: user.email,
-        name: user.displayName,
-        attempts: count,
-        seconds,
-        ip: req?.ip,
-        userAgent: req?.get("user-agent")
-      });
-      await logAuthEvent({
-        eventType: "ALERT_EMAIL_SENT",
-        userId: user.id,
-        email: user.email,
-        req,
-        details: { kind: "lockout", attempts: count, seconds }
-      });
-    } catch (error) {
-      await logAuthEvent({
-        eventType: "ALERT_EMAIL_FAILED",
-        userId: user.id,
-        email: user.email,
-        req,
-        details: { kind: "lockout" }
-      });
-    }
-    return seconds;
   }
 
-  return 0;
+  // Warn the account owner on every failed attempt, including the attempt
+  // that triggers (or extends) a lockout. The message carries the attempt
+  // number, IP, device and — when applicable — the lock duration.
+  try {
+    await sendFailedLoginAlert({
+      to: user.email,
+      name: user.displayName,
+      attempts: count,
+      seconds: seconds ?? undefined,
+      ip: req?.ip,
+      userAgent: req?.get("user-agent")
+    });
+    await logAuthEvent({
+      eventType: "ALERT_EMAIL_SENT",
+      userId: user.id,
+      email: user.email,
+      req,
+      details: { kind: "failed_login", attempts: count, seconds: seconds ?? 0 }
+    });
+  } catch (error) {
+    await logAuthEvent({
+      eventType: "ALERT_EMAIL_FAILED",
+      userId: user.id,
+      email: user.email,
+      req,
+      details: { kind: "failed_login", attempts: count }
+    });
+  }
+
+  return seconds ?? 0;
 }
 
 // A real hash for unknown emails so the response time does not reveal whether
