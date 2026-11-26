@@ -18,7 +18,6 @@ import '../widgets/refresh_overlay.dart';
 import '../widgets/tahanan_kit.dart';
 import '../widgets/ui.dart';
 import 'create_boarding_house.dart';
-import 'admin/security_dashboard.dart';
 
 class HousesScreen extends StatelessWidget {
   const HousesScreen({super.key});
@@ -295,26 +294,6 @@ class HousesScreen extends StatelessWidget {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    if (s.user?.isAdmin == true)
-                                      TextButton.icon(
-                                        onPressed: () => pushLiquidPage(
-                                          context,
-                                          const AdminSecurityScreen(),
-                                        ),
-                                        icon: Icon(
-                                          AppIcons.shieldLine,
-                                          color: kPrimary,
-                                          size: 17,
-                                        ),
-                                        label: Text(
-                                          'Security monitoring',
-                                          style: TextStyle(
-                                            color: kPrimary,
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
                                     TextButton.icon(
                                       onPressed: () => s.signOut(),
                                       icon: Icon(

@@ -9,7 +9,6 @@ import '../widgets/app_icons.dart';
 import '../widgets/tahanan_kit.dart';
 import '../widgets/privacy_notice.dart';
 import 'more_kit.dart';
-import 'admin/security_dashboard.dart';
 import 'server_address_dialog.dart';
 import 'owner/announcements.dart';
 import 'change_password_screen.dart';
@@ -50,10 +49,6 @@ class MoreScreen extends StatelessWidget {
       onChangePassword: () => pushLiquidPage(
         context,
         const ChangePasswordScreen(),
-      ),
-      onAdminSecurity: () => pushLiquidPage(
-        context,
-        const AdminSecurityScreen(),
       ),
       onServerAddress: () => showServerAddressDialog(context),
       onCopyKey: () {
