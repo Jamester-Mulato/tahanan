@@ -142,6 +142,34 @@ app.get(["/admin", "/admin/"], (_req, res) => {
   res.type("html").sendFile(adminPage);
 });
 
+// Flutter web’s bootstrap uses an inline script, and CanvasKit may use
+// wasm/workers. Helmet’s strict default CSP would leave the page blank, so
+// the app files get a CSP that still forbids foreign origins.
+app.use((req, res, next) => {
+  if (
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/admin") ||
+    req.path.startsWith("/recaptcha")
+  ) {
+    return next();
+  }
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' http://localhost:8080 https://desktop-3qsl3r1.tailaeee27.ts.net",
+      "worker-src 'self' blob:",
+      "frame-src 'self' https://www.google.com",
+      "frame-ancestors 'self'"
+    ].join("; ")
+  );
+  next();
+});
+
 // Serve the Flutter web build from the same origin, so the whole product can
 // live behind one Tailscale HTTPS endpoint: / = web app, /admin = console,
 // /api = API. Skipped on hosts that deploy only the API (for example Render).
