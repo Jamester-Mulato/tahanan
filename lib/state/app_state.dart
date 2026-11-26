@@ -8,17 +8,19 @@ import '../services/saved_accounts_store.dart';
 import '../services/token_store.dart';
 
 class AppState extends ChangeNotifier {
-  final api = ApiClient();
+  /// [api] is injectable so a widget test can drive the app with a fake
+  /// transport instead of mutating public fields.
+  AppState({ApiClient? api}) : api = api ?? ApiClient() {
+    this.api.onUnauthorized = () => unawaited(_expireSession());
+  }
+
+  final ApiClient api;
   final _tokenStore = TokenStore();
   final _accountsStore = SavedAccountsStore();
   late final auth = AuthService(api);
 
   bool _sessionExpired = false;
   bool _demoMode = false;
-
-  AppState() {
-    api.onUnauthorized = () => unawaited(_expireSession());
-  }
 
   UserModel? user;
 
@@ -966,7 +968,9 @@ class AppState extends ChangeNotifier {
 
   Future<void> _busy(
     Future<void> Function() op, {
-    bool globalLoader = true,
+    /// The whole-app splash is reserved for boot and session changes. A write
+    /// inside a screen must not replace the screen it is editing.
+    bool globalLoader = false,
   }) async {
     if (globalLoader) {
       loading = true;

@@ -35,7 +35,11 @@ class ApiException implements Exception {
 /// * Never logs tokens, request bodies or response bodies.
 /// * Caps response size and converts every failure into a safe message.
 class ApiClient {
-  ApiClient({this.onUnauthorized});
+  /// [client] and [baseUrl] exist so a test can substitute a fake transport;
+  /// production callers use the defaults.
+  ApiClient({this.onUnauthorized, http.Client? client, String? baseUrl})
+      : _client = client ?? http.Client(),
+        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
 
   // A free Render instance can take up to a minute to wake from sleep, so the
   // first request after idle needs a longer budget than a local server.
@@ -43,7 +47,8 @@ class ApiClient {
   static const int _maxResponseBytes = 5 * 1024 * 1024;
   static const int _maxMessageLength = 240;
 
-  final http.Client _client = http.Client();
+  final http.Client _client;
+  final String _baseUrl;
 
   /// Called once when the backend rejects the stored access token.
   VoidCallback? onUnauthorized;
@@ -71,7 +76,7 @@ class ApiClient {
       );
     }
 
-    final uri = Uri.parse('${AppConfig.apiBaseUrl}$path');
+    final uri = Uri.parse('$_baseUrl$path');
     _assertTransportIsSecure(uri);
 
     final headers = <String, String>{
