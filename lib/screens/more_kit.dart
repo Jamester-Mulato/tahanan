@@ -31,6 +31,9 @@ class MoreBody extends StatelessWidget {
   final VoidCallback onCopyKey;
   final VoidCallback onChangePassword;
 
+  /// Per-account security trail, available to every owner and tenant.
+  final VoidCallback? onSecurityActivity;
+
   /// Admin-only. Opens the server-address dialog for this device.
   final VoidCallback? onServerAddress;
 
@@ -45,6 +48,7 @@ class MoreBody extends StatelessWidget {
     required this.onSignOut,
     required this.onCopyKey,
     required this.onChangePassword,
+    this.onSecurityActivity,
     this.onServerAddress,
   });
 
@@ -202,6 +206,19 @@ class MoreBody extends StatelessWidget {
                 eyebrow: 'Session',
                 title: 'Security',
               ),
+              if (onSecurityActivity != null) ...[
+                _SettingsGroup(
+                  children: [
+                    SettingsTile(
+                      icon: AppIcons.shieldLine,
+                      title: 'Security activity',
+                      subtitle: 'Sign-ins and attempts on your account',
+                      onTap: onSecurityActivity!,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
               if (user?.isAdmin == true && onServerAddress != null) ...[
                 _SettingsGroup(
                   children: [

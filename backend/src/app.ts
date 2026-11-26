@@ -19,6 +19,7 @@ import { dashboardRouter } from "./routes/dashboard.routes";
 import { adminRouter } from "./routes/admin.routes";
 import { adminConsoleRouter } from "./routes/admin-console.routes";
 import { clientErrorsRouter } from "./routes/client-errors.routes";
+import { securityRouter } from "./routes/security.routes";
 import { recaptchaPage } from "./views/recaptcha-page";
 
 import path from "node:path";
@@ -119,6 +120,7 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/admin/console", adminConsoleRouter);
 app.use("/api/client-errors", clientErrorsRouter);
+app.use("/api/security", securityRouter);
 
 // Standalone admin console (not part of the Flutter app). Same origin as the
 // API, so the page talks to /api/admin/console with a bearer token.

@@ -9,6 +9,7 @@ import '../widgets/app_icons.dart';
 import '../widgets/tahanan_kit.dart';
 import '../widgets/privacy_notice.dart';
 import 'more_kit.dart';
+import 'security_activity_screen.dart';
 import 'server_address_dialog.dart';
 import 'owner/announcements.dart';
 import 'change_password_screen.dart';
@@ -51,6 +52,10 @@ class MoreScreen extends StatelessWidget {
         const ChangePasswordScreen(),
       ),
       onServerAddress: () => showServerAddressDialog(context),
+      onSecurityActivity: () => pushLiquidPage(
+        context,
+        const SecurityActivityScreen(),
+      ),
       onCopyKey: () {
         final key = context.read<AppState>().selected?.joinKey ?? '';
         if (key.isEmpty) return;
