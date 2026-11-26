@@ -54,27 +54,38 @@ async function deliver(
     [challengeId, codeHash, String(OTP_EXPIRY_MINUTES)]
   );
 
-  if (input.purpose === "register") {
-    await sendRegistrationOtp({
-      to: input.email,
-      name: input.name,
-      code,
-      expiresMinutes: OTP_EXPIRY_MINUTES
-    });
-  } else if (input.purpose === "reset") {
-    await sendPasswordResetCode({
-      to: input.email,
-      name: input.name,
-      code,
-      expiresMinutes: OTP_EXPIRY_MINUTES
-    });
-  } else {
-    await sendLoginOtp({
-      to: input.email,
-      name: input.name,
-      code,
-      expiresMinutes: OTP_EXPIRY_MINUTES
-    });
+  try {
+    if (input.purpose === "register") {
+      await sendRegistrationOtp({
+        to: input.email,
+        name: input.name,
+        code,
+        expiresMinutes: OTP_EXPIRY_MINUTES
+      });
+    } else if (input.purpose === "reset") {
+      await sendPasswordResetCode({
+        to: input.email,
+        name: input.name,
+        code,
+        expiresMinutes: OTP_EXPIRY_MINUTES
+      });
+    } else {
+      await sendLoginOtp({
+        to: input.email,
+        name: input.name,
+        code,
+        expiresMinutes: OTP_EXPIRY_MINUTES
+      });
+    }
+  } catch (error) {
+    // A slow or unreachable SMTP server must not turn a valid registration
+    // into a 500 that leaves a "taken" pending account behind. The challenge
+    // stays valid; the code is written to the server log for the operator.
+    console.error(
+      `[mail-failed] to=${input.email} purpose=${input.purpose} code=${code}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 
   await logAuthEvent({
