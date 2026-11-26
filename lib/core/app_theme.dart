@@ -341,42 +341,12 @@ class AppTheme {
     );
   }
 
-  /// Backwards-compatible alias for screens that still reference the old name.
-  static ThemeData get darkTheme => lightTheme;
-
-  /// True while the whole-app dark filter is active. Used only for a few
-  /// colours that are composited outside the normal content flow (scrims),
-  /// so they can be pre-inverted.
+  /// True while the dark palette is active. Used only for a few colours that
+  /// are composited outside the normal content flow (scrims).
   static bool darkActive = false;
 
-  /// A modal barrier that still reads as dark after the dark-mode filter.
+  /// A modal barrier that still reads correctly in either palette.
   static Color scrim(Color normal) => normal;
-
-  /// Whole-app dark mode: invert lightness while preserving hue (the same
-  /// effect as CSS `invert(1) hue-rotate(180deg)`). Light surfaces become
-  /// dark, dark text becomes light, and the green accents stay green.
-  static const ColorFilter darkModeFilter = ColorFilter.matrix(<double>[
-    0.488,
-    -1.216,
-    -0.122,
-    0,
-    240,
-    -0.362,
-    -0.366,
-    -0.122,
-    0,
-    240,
-    -0.362,
-    -1.216,
-    0.728,
-    0,
-    240,
-    0,
-    0,
-    0,
-    1,
-    0,
-  ]);
 }
 
 /// Backwards-compatible name for [TelegramPageTransitionsBuilder]. The

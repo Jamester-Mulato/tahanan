@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Persisted Light / Dark / System preference. The visual dark mode is applied
-/// by [TahananApp] as a whole-app display filter, so the light design stays
-/// pixel-identical and the phone/web layouts are untouched.
+/// Persisted Light / Dark / System preference. Dark mode swaps the palette
+/// ([AppColors.dark] selects literal light or dark values); there is no
+/// colour filter, so layouts and artwork are untouched.
 class ThemeController extends ChangeNotifier with WidgetsBindingObserver {
   static const _key = 'tahanan.theme_mode';
 
