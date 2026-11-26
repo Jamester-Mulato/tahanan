@@ -10,11 +10,9 @@ import '../state/app_state.dart';
 ///
 /// The backend enforces the same rule, except for administrators. This guard
 /// shows a passive toast during the final warning window (“Signing out in
-/// Ns…”), then signs out automatically. There is no blocking dialog and no
-/// stay/sign-out prompt — any real interaction simply resets the timer.
-///
-/// Only real input (pointer/touch/scroll) counts as activity. Background
-/// refreshes do not, and neither do rebuilds.
+/// Ns…”), then signs out automatically. It is a hard session limit for the
+/// demo: interacting with the screen does not postpone it — only a new
+/// sign-in starts a fresh session.
 class IdleSessionGuard extends StatefulWidget {
   final bool enabled;
   final Widget child;
@@ -80,13 +78,6 @@ class _IdleSessionGuardState extends State<IdleSessionGuard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.enabled) _tick();
     });
-  }
-
-  /// Any deliberate interaction pushes the deadline back.
-  void _markActive() {
-    if (!widget.enabled || _expiring) return;
-    _lastActivity = DateTime.now();
-    _hideToast();
   }
 
   void _tick() {
@@ -212,12 +203,6 @@ class _IdleSessionGuardState extends State<IdleSessionGuard> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _markActive(),
-      onPointerSignal: (_) => _markActive(),
-      child: widget.child,
-    );
+    return widget.child;
   }
 }

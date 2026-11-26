@@ -61,9 +61,87 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     ]) {
       controller.addListener(_clearError);
     }
+    _password.addListener(_onPasswordChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _loadCaptchaMode();
     });
+  }
+
+  void _onPasswordChanged() {
+    if (mounted) setState(() {});
+  }
+
+  int get _passwordScore {
+    final value = _password.text;
+    var score = 0;
+    if (value.length >= 9) score++;
+    if (value.length >= 12) score++;
+    if (RegExp(r'[A-Z]').hasMatch(value)) score++;
+    if (RegExp(r'[0-9]').hasMatch(value)) score++;
+    if (RegExp(r'[^A-Za-z0-9]').hasMatch(value)) score++;
+    return score.clamp(0, 5);
+  }
+
+  String get _passwordLabel => [
+        'Very weak',
+        'Weak',
+        'Fair',
+        'Medium',
+        'Strong',
+        'Excellent'
+      ][_passwordScore];
+
+  Color get _passwordColor => _passwordScore <= 1
+      ? AppColors.danger
+      : _passwordScore <= 3
+          ? const Color(0xFFB45309)
+          : AppColors.primary;
+
+  bool get _passwordIsWeak =>
+      _password.text.isNotEmpty &&
+      (_password.text.length < 9 ||
+          !RegExp(r'[A-Z]').hasMatch(_password.text) ||
+          !RegExp(r'[0-9]').hasMatch(_password.text));
+
+  Widget _strengthPanel() {
+    if (_password.text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: _passwordScore / 5,
+                    minHeight: 4,
+                    backgroundColor: AppColors.border,
+                    valueColor: AlwaysStoppedAnimation<Color>(_passwordColor),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _passwordLabel,
+                style: TextStyle(
+                  color: _passwordColor,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Use 9+ characters with an uppercase letter and a number.',
+            style: TextStyle(color: AppColors.muted, fontSize: 10),
+          ),
+        ],
+      ),
+    );
   }
 
   void _clearError() {
@@ -73,6 +151,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void dispose() {
+    _password.removeListener(_onPasswordChanged);
     for (final controller in [
       _username,
       _captcha,
@@ -249,6 +328,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _error = 'Password must be at least 9 characters.');
       return;
     }
+    if (_passwordIsWeak) {
+      setState(() =>
+          _error = 'Password must include an uppercase letter and a number.');
+      return;
+    }
     if (_password.text != _repassword.text) {
       setState(() => _error = 'Passwords do not match.');
       return;
@@ -401,6 +485,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             obscure: true,
                             required: true,
                           ),
+                          _strengthPanel(),
                         ],
                         if (_step == 3)
                           const Column(
