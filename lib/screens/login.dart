@@ -281,16 +281,35 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     } on ApiException catch (error) {
       if (!mounted) return;
+      final details = error.details;
+      final serverAttempts = (details?['attempts'] as num?)?.toInt();
+      final lockDetails = (details?['retryAfter'] as num?)?.toInt();
       if (error.status == 423 || error.status == 429) {
-        final seconds = error.retryAfter;
+        final seconds = lockDetails ?? error.retryAfter;
         if (seconds != null && seconds > 0) _startLockout(seconds);
       }
       setState(() {
-        _formError = error.message;
-        if (error.status == 401) _failedAttempts++;
-        if (error.status == 401 || error.status == 400) {
+        if (serverAttempts != null) {
+          _failedAttempts = serverAttempts;
+        } else if (error.status == 401) {
+          _failedAttempts++;
+        }
+        final attemptInCycle =
+            _failedAttempts <= 0 ? 1 : ((_failedAttempts - 1) % 3) + 1;
+        if (error.status == 423 || error.status == 429) {
+          _formError =
+              'Too many failed attempts ($attemptInCycle of 3). ${error.message}';
+        } else {
+          _formError =
+              '${error.message} Attempt $attemptInCycle of 3 — the account '
+              'locks temporarily after 3 failed attempts.';
+        }
+        if (error.status == 400) {
           _recaptchaToken = null;
           _captchaError = error.message;
+        } else if (error.status == 401) {
+          _recaptchaToken = null;
+          _captchaError = null;
         }
       });
       if (error.status == 401 || error.status == 400) {

@@ -212,7 +212,8 @@ async function noteIpFailure(
 async function registerFailedAttempt(
   user: UserRow,
   req?: Request
-): Promise<number> {  const updated = await query<{ failed_login_count: number }>(
+): Promise<{ attempts: number; seconds: number }> {
+  const updated = await query<{ failed_login_count: number }>(
     `UPDATE users
         SET failed_login_count = failed_login_count + 1,
             updated_at = now()
@@ -275,7 +276,7 @@ async function registerFailedAttempt(
     });
   }
 
-  return seconds ?? 0;
+  return { attempts: count, seconds: seconds ?? 0 };
 }
 
 // A real hash for unknown emails so the response time does not reveal whether
@@ -486,7 +487,7 @@ export async function authenticatePassword(
   const ok = await verifyPassword(input.password, user.password_hash);
 
   if (!ok) {
-    const lockedFor = await registerFailedAttempt(user, req);
+    const failure = await registerFailedAttempt(user, req);
     await noteIpFailure(ip, input.identifier, req);
     await logAuthEvent({
       eventType: "LOGIN_FAILED",
@@ -494,22 +495,23 @@ export async function authenticatePassword(
       email,
       usernameTyped: input.identifier,
       req,
-      details: { reason: "wrong_password", lockedFor }
+      details: { reason: "wrong_password", lockedFor: failure.seconds }
     });
 
-    if (lockedFor > 0) {
+    if (failure.seconds > 0) {
       throw new HttpError(
         423,
         "ACCOUNT_LOCKED",
-        `Too many attempts. Try again in ${lockedFor} seconds.`,
-        { retryAfter: lockedFor }
+        `Too many attempts. Try again in ${failure.seconds} seconds.`,
+        { retryAfter: failure.seconds, attempts: failure.attempts }
       );
     }
 
     throw new HttpError(
       401,
       "INVALID_CREDENTIALS",
-      "Invalid username or password."
+      "Invalid username or password.",
+      { attempts: failure.attempts }
     );
   }
 
