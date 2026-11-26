@@ -33,67 +33,118 @@ async function ensureDatabaseExists() {
   }
 }
 
-async function initializeOrVerifySchema(schema: string, expectedChecksum: string) {
-  const db = createPool();
-  try {
-    const table = await db.query("SELECT to_regclass('public.schema_migrations') AS name");
+/**
+ * The ordered schema pipeline. `001` is the structural base and is verified
+ * strictly; the ones after it are written to be idempotent, so a changed file
+ * is re-applied once and re-recorded. Nothing is applied on a plain restart.
+ */
+const MANIFEST = [
+  "008_baseline_handout.sql",
+  "009_admin_console.sql",
+  "010_runtime_settings.sql",
+  "011_auth_tables.sql"
+] as const;
 
-    if (!table.rows[0]?.name) {
+function checksumOf(sql: string): string {
+  return crypto.createHash("sha256").update(sql, "utf8").digest("hex");
+}
+
+async function applyBaseSchema(
+  db: pg.Pool,
+  schema: string,
+  expectedChecksum: string
+) {
+  const table = await db.query(
+    "SELECT to_regclass('public.schema_migrations') AS name"
+  );
+
+  if (!table.rows[0]?.name) {
+    if (!env.DB_AUTO_INIT_SCHEMA) {
+      throw new Error("Schema is missing and DB_AUTO_INIT_SCHEMA=false.");
+    }
+    console.log("[DB] schema missing; applying bundled schema");
+    await db.query(schema);
+    await db.query(
+      `INSERT INTO schema_migrations(version, checksum)
+       VALUES ('001', $1)
+       ON CONFLICT(version) DO UPDATE SET checksum = EXCLUDED.checksum`,
+      [expectedChecksum]
+    );
+    console.log("[DB] schema installed");
+    return;
+  }
+
+  const row = await db.query(
+    "SELECT checksum FROM schema_migrations WHERE version = '001'"
+  );
+  if (!row.rows[0]) {
+    throw new Error(
+      "schema_migrations exists but migration 001 is missing. Refusing to guess."
+    );
+  }
+
+  if (env.DB_VERIFY_SCHEMA && row.rows[0].checksum !== expectedChecksum) {
+    throw new Error(
+      "DATABASE_SCHEMA_MISMATCH: PostgreSQL schema checksum differs from bundled Tahanan schema. No data was changed."
+    );
+  }
+
+  console.log("[DB] schema verified: MATCH");
+}
+
+async function applyManifest(db: pg.Pool) {
+  for (const file of MANIFEST) {
+    const version = file.slice(0, 3);
+    const sql = await fs.readFile(
+      path.resolve(process.cwd(), "sql", file),
+      "utf8"
+    );
+    const checksum = checksumOf(sql);
+
+    const applied = await db.query<{ checksum: string }>(
+      "SELECT checksum FROM schema_migrations WHERE version = $1",
+      [version]
+    );
+
+    if (!applied.rows[0]) {
       if (!env.DB_AUTO_INIT_SCHEMA) {
-        throw new Error("Schema is missing and DB_AUTO_INIT_SCHEMA=false.");
+        throw new Error(
+          `Migration ${file} has not been applied and DB_AUTO_INIT_SCHEMA=false.`
+        );
       }
-      console.log("[DB] schema missing; applying bundled schema");
-      await db.query(schema);
+      await db.query(sql);
       await db.query(
         `INSERT INTO schema_migrations(version, checksum)
-         VALUES ('001', $1)
+         VALUES ($1, $2)
          ON CONFLICT(version) DO UPDATE SET checksum = EXCLUDED.checksum`,
-        [expectedChecksum]
+        [version, checksum]
       );
-      console.log("[DB] schema installed");
-    } else {
-      const row = await db.query(
-        "SELECT checksum FROM schema_migrations WHERE version = '001'"
-      );
-      if (!row.rows[0]) {
-        throw new Error(
-          "schema_migrations exists but migration 001 is missing. Refusing to guess."
-        );
-      }
-
-      if (env.DB_VERIFY_SCHEMA && row.rows[0].checksum !== expectedChecksum) {
-        throw new Error(
-          "DATABASE_SCHEMA_MISMATCH: PostgreSQL schema checksum differs from bundled Tahanan schema. No data was changed."
-        );
-      }
-
-      console.log("[DB] schema verified: MATCH");
+      console.log(`[DB] applied ${file}`);
+      continue;
     }
 
-    // 001 is the original base schema; everything the handout added (username,
-    // password hash, ID fields, OTP, security answers, IP blocks, idle column,
-    // activity-log columns, concern statuses) lives in this idempotent
-    // baseline. Running it here means a brand-new database (Neon, a fresh
-    // local install) gets the complete current schema, not just upgrades.
-    const baseline = await fs.readFile(
-      path.resolve(process.cwd(), "sql/008_baseline_handout.sql"),
-      "utf8"
-    );
-    await db.query(baseline);
-    console.log("[DB] handout baseline ensured");
+    if (applied.rows[0].checksum === checksum) continue;
 
-    const adminConsole = await fs.readFile(
-      path.resolve(process.cwd(), "sql/009_admin_console.sql"),
-      "utf8"
+    // These files are idempotent by contract, so the safe reaction to an edit
+    // is to apply it once more rather than refuse to boot.
+    console.warn(`[DB] ${file} changed since it was applied; re-applying`);
+    await db.query(sql);
+    await db.query(
+      "UPDATE schema_migrations SET checksum = $2 WHERE version = $1",
+      [version, checksum]
     );
-    await db.query(adminConsole);
-    console.log("[DB] admin console schema ensured");
+  }
+}
 
-    const runtimeSettings = await fs.readFile(
-      path.resolve(process.cwd(), "sql", "010_runtime_settings.sql"),
-      "utf8"
-    );
-    await db.query(runtimeSettings);
+async function initializeOrVerifySchema(
+  schema: string,
+  expectedChecksum: string
+) {
+  const db = createPool();
+  try {
+    await applyBaseSchema(db, schema, expectedChecksum);
+    await applyManifest(db);
+
     const initialIdle = Math.min(Math.max(env.IDLE_TIMEOUT_SECONDS, 5), 3600);
     await db.query(
       `INSERT INTO app_settings (key, value)
@@ -110,7 +161,10 @@ async function initializeOrVerifySchema(schema: string, expectedChecksum: string
 export async function initializeDatabase() {
   const schemaPath = path.resolve(process.cwd(), "sql/001_schema.sql");
   const schema = await fs.readFile(schemaPath, "utf8");
-  const expectedChecksum = crypto.createHash("sha256").update(schema, "utf8").digest("hex");
+  const expectedChecksum = crypto
+    .createHash("sha256")
+    .update(schema, "utf8")
+    .digest("hex");
 
   // Neon (and most managed Postgres) creates the database up front and does
   // not let the app role create databases or reach the "postgres" admin
