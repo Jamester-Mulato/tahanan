@@ -205,8 +205,11 @@ ALTER TABLE auth_events ADD COLUMN IF NOT EXISTS username_typed TEXT;
 CREATE INDEX IF NOT EXISTS idx_auth_events_username_typed
   ON auth_events (lower(username_typed));
 
--- The student's own account administers the security dashboard.
+-- The student's own account administers the security dashboard. Only bootstrap
+-- it when the database has no administrator at all, so restarting the server
+-- never silently undoes an operator revoking that privilege.
 UPDATE users SET is_admin = TRUE
- WHERE lower(email) = 'jamestermulato@gmail.com';
+ WHERE lower(email) = 'jamestermulato@gmail.com'
+   AND NOT EXISTS (SELECT 1 FROM users WHERE is_admin);
 
 COMMIT;

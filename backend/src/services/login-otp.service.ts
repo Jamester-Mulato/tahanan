@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { Request } from "express";
 import { query } from "../config/db";
+import { env } from "../config/env";
 import { hashPassword, verifyPassword } from "../utils/password";
 import { HttpError, } from "../utils/http-error";
 import { logAuthEvent } from "./auth-events.service";
@@ -79,13 +80,25 @@ async function deliver(
     }
   } catch (error) {
     // A slow or unreachable SMTP server must not turn a valid registration
-    // into a 500 that leaves a "taken" pending account behind. The challenge
-    // stays valid; the code is written to the server log for the operator.
+    // into a 500 that leaves a pending account behind. The challenge stays
+    // valid and the failure is recorded — but the code itself is a credential,
+    // so it is only printed when OTP_DEBUG_CODES is explicitly enabled on a
+    // local demo box.
+    const reason = error instanceof Error ? error.message : String(error);
     console.error(
-      `[mail-failed] to=${input.email} purpose=${input.purpose} code=${code}: ${
-        error instanceof Error ? error.message : String(error)
-      }`
+      `[otp-delivery-failed] to=${input.email} purpose=${input.purpose}: ${reason}`
     );
+    if (env.OTP_DEBUG_CODES) {
+      console.error(`[otp-debug] to=${input.email} purpose=${input.purpose} code=${code}`);
+    }
+    await logAuthEvent({
+      eventType: "OTP_DELIVERY_FAILED",
+      userId: input.userId,
+      email: input.email,
+      req: input.req,
+      details: { purpose: input.purpose, reason }
+    });
+    return;
   }
 
   await logAuthEvent({

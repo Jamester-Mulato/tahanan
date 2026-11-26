@@ -64,7 +64,16 @@ const envSchema = z.object({
    * instances send mail through Brevo's HTTPS API instead. When this key is
    * present it takes precedence over SMTP.
    */
-  BREVO_API_KEY: z.string().default("")
+  BREVO_API_KEY: z.string().default(""),
+  /**
+   * Off by default: a one-time code is a credential and must never reach the
+   * logs. Set to "true" only on a local demo box where SMTP is unavailable and
+   * the operator needs to read the code from the console.
+   */
+  OTP_DEBUG_CODES: z
+    .string()
+    .default("false")
+    .transform((value) => value === "true")
 });
 
 export const env = envSchema.parse(process.env);
