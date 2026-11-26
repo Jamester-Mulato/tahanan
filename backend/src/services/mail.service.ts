@@ -397,57 +397,6 @@ export async function sendFailedLoginAlert(input: {
   });
 }
 
-export async function sendLockoutAlert(input: {
-  to: string;
-  name: string;
-  attempts: number;
-  seconds: number;
-  ip?: string;
-  userAgent?: string;
-}): Promise<boolean> {
-  const logo = logoSettings();
-  const name = escapeHtml(input.name);
-  const ip = escapeHtml(input.ip || "unknown");
-  const agent = escapeHtml(input.userAgent || "unknown");
-  const when = phtDateTime();
-  const resetLink = `${env.APP_PUBLIC_URL.replace(/\/+$/, "")}/?forgot=1`;
-
-  return send({
-    to: input.to,
-    subject: "Failed sign-in attempts on your account",
-    text: [
-      "Tahanan Secure",
-      "",
-      `Hello ${input.name},`,
-      "",
-      `There were ${input.attempts} failed sign-in attempts on your account.`,
-      `The account is locked for ${input.seconds} seconds.`,
-      "",
-      `Date and time (PHT): ${when}`,
-      `IP address: ${input.ip || "unknown"}`,
-      `Browser/device: ${input.userAgent || "unknown"}`,
-      "",
-      "If this was not you, reset your password now:",
-      resetLink
-    ].join("\n"),
-    html: emailShell({
-      preheader: "Failed sign-in attempts on your Tahanan Secure account",
-      heading: "Failed sign-in attempts on your account",
-      hasLogo: Boolean(logo.logoPath),
-      body: `
-        <p style="margin:0 0 14px;">Hello ${name},</p>
-        <p style="margin:0 0 16px;">There were <strong>${input.attempts}</strong> failed sign-in attempts on your account. It is locked for <strong>${input.seconds} seconds</strong>.</p>
-        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; background:#f4faf6; border:1px solid #d8eee2; border-radius:14px; padding:14px; margin-bottom:16px;">
-          <tr><td style="padding:4px 12px; color:#7a9486; font-size:11px;">DATE AND TIME (PHT)</td><td style="padding:4px 12px; color:#0b1f14; font-size:12px;">${when}</td></tr>
-          <tr><td style="padding:4px 12px; color:#7a9486; font-size:11px;">IP ADDRESS</td><td style="padding:4px 12px; color:#0b1f14; font-size:12px; font-family:ui-monospace,monospace;">${ip}</td></tr>
-          <tr><td style="padding:4px 12px; color:#7a9486; font-size:11px;">DEVICE</td><td style="padding:4px 12px; color:#0b1f14; font-size:12px;">${agent}</td></tr>
-        </table>
-        <p style="margin:0;">If this was not you, <a href="${escapeHtml(resetLink)}" style="color:#0f7a44; font-weight:700;">reset your password now</a>.</p>
-      `
-    })
-  });
-}
-
 export async function sendPasswordChangedAlert(input: {
   to: string;
   name: string;

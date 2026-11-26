@@ -1,5 +1,7 @@
 import { env } from "../config/env";
 import { query } from "../config/db";
+import type { Request } from "express";
+import { logAuthEvent } from "./auth-events.service";
 
 const WINDOW_MS = 10 * 60 * 1000;
 const failures = new Map<string, number[]>();
@@ -79,6 +81,30 @@ export async function recordIpFailure(ip: string | undefined): Promise<number> {
   }
 
   return 0;
+}
+
+/**
+ * Records one throttled failure for an IP and announces the block when the
+ * threshold is crossed. Every caller (a wrong password, a failed CAPTCHA, a
+ * failed reCAPTCHA) goes through here, so `IP_BLOCKED` is written once.
+ */
+export async function recordIpBlock(
+  ip: string | undefined,
+  identifier: string | undefined,
+  req?: Request,
+  source?: string
+): Promise<number> {
+  const seconds = await recordIpFailure(ip);
+  if (seconds > 0) {
+    await logAuthEvent({
+      eventType: "IP_BLOCKED",
+      email: identifier,
+      usernameTyped: identifier,
+      req,
+      details: { seconds, threshold: env.IP_BLOCK_THRESHOLD, ip, source }
+    });
+  }
+  return seconds;
 }
 
 /** A successful sign-in clears the failure window and lifts the block. */

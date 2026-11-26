@@ -1,11 +1,22 @@
 /**
  * Server-side registration rules for the Tahanan system.
  * Every rule here is repeated on the client, but the server is the authority.
+ * Credential rules themselves live in services/credential-policy so the
+ * request layer, this validator and the domain layer cannot drift.
  */
-export const MIN_USERNAME = 7;
-export const MAX_USERNAME = 16;
-export const MIN_PASSWORD = 9;
-export const MAX_PASSWORD = 64;
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  passwordProblem as passwordPolicyProblem,
+  usernameProblem as usernamePolicyProblem
+} from "../services/credential-policy";
+
+export const MIN_USERNAME = USERNAME_MIN_LENGTH;
+export const MAX_USERNAME = USERNAME_MAX_LENGTH;
+export const MIN_PASSWORD = PASSWORD_MIN_LENGTH;
+export const MAX_PASSWORD = PASSWORD_MAX_LENGTH;
 export const MAX_NAME = 25;
 export const ROOM_TYPES = ["Single", "Shared", "Bedspacer", "Studio"] as const;
 export const EXTENSION_OPTIONS = ["", "Jr.", "Sr.", "Other"] as const;
@@ -194,29 +205,11 @@ export function validateRegistration(input: RegistrationInput): Record<string, s
     errors.email = "Please enter a valid email address.";
   }
 
-  const usernameProblem = (() => {
-    if (input.username.length < MIN_USERNAME) {
-      return `Username must be at least ${MIN_USERNAME} characters.`;
-    }
-    if (input.username.length > MAX_USERNAME) {
-      return `Username must be at most ${MAX_USERNAME} characters.`;
-    }
-    if (!/^[A-Za-z][A-Za-z0-9]*$/.test(input.username)) {
-      return "Username must start with a letter and use letters and digits only.";
-    }
-    return null;
-  })();
-  if (usernameProblem) errors.username = usernameProblem;
+  const usernameIssue = usernamePolicyProblem(input.username);
+  if (usernameIssue) errors.username = usernameIssue;
 
-  if (input.password.length < MIN_PASSWORD) {
-    errors.password = `Password must be at least ${MIN_PASSWORD} characters.`;
-  } else if (input.password.length > MAX_PASSWORD) {
-    errors.password = `Password must be at most ${MAX_PASSWORD} characters.`;
-  } else if (input.password === input.password.toLowerCase()) {
-    errors.password = "Password must include an uppercase letter and a number.";
-  } else if (!/\d/.test(input.password)) {
-    errors.password = "Password must include an uppercase letter and a number.";
-  }
+  const passwordIssue = passwordPolicyProblem(input.password);
+  if (passwordIssue) errors.password = passwordIssue;
   if (input.password !== input.repassword) {
     errors.repassword = "Passwords do not match.";
   }

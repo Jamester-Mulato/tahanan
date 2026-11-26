@@ -1,7 +1,6 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
 import {
-  authenticatePassword,
   changePassword,
   completeLogin,
   loginWithGoogle,
@@ -10,6 +9,10 @@ import {
   registerWithGoogle,
   usernameAvailable
 } from "../services/auth.service";
+import {
+  attemptPasswordSignIn,
+  signInError
+} from "../services/sign-in.service";
 import {
   activateAccount,
   registerAccount
@@ -47,7 +50,7 @@ import {
   verifyLoginOtp,
   verifyOtp
 } from "../services/login-otp.service";
-import { ipBlockSeconds, recordIpFailure } from "../services/throttle.service";
+import { recordIpBlock } from "../services/throttle.service";
 import { requireAuth } from "../middleware/auth";
 import { HttpError } from "../utils/http-error";
 import { env } from "../config/env";
@@ -63,25 +66,21 @@ const emailSchema = z
   .max(254)
   .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Enter a valid email address.");
 
-const passwordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters.")
-  .max(128, "Password must be at most 128 characters.")
-  .refine(
-    (value) => /[A-Za-z]/.test(value) && /\d/.test(value),
-    "Password must include a letter and a number."
-  );
+import {
+  passwordProblem,
+  usernameProblem
+} from "../services/credential-policy";
+
+const passwordSchema = z.string().superRefine((value, ctx) => {
+  const problem = passwordProblem(value);
+  if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+});
 
 // Handout 4.9: letters and digits, starts with a letter, 7–16 characters.
-const usernameSchema = z
-  .string()
-  .trim()
-  .min(7, "Username must be at least 7 characters.")
-  .max(16, "Username must be at most 16 characters.")
-  .regex(
-    /^[A-Za-z][A-Za-z0-9]*$/,
-    "Username must start with a letter and use letters and digits only."
-  );
+const usernameSchema = z.string().trim().superRefine((value, ctx) => {
+  const problem = usernameProblem(value.trim());
+  if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+});
 
 const humanSchema = z.object({
   captchaId: z.string().trim().min(1).max(128).optional(),
@@ -129,21 +128,12 @@ async function requireHuman(
   if (input.recaptchaToken) {
     const ok = await verifyRecaptcha(input.recaptchaToken, req.ip);
     if (!ok) {
-      const seconds = await recordIpFailure(req.ip);
       await logAuthEvent({
         eventType: "RECAPTCHA_FAILED",
         email: input.email,
         req
       });
-      if (seconds > 0) {
-        await logAuthEvent({
-          eventType: "IP_BLOCKED",
-          email: input.email,
-          usernameTyped: input.email,
-          req,
-          details: { seconds, source: "recaptcha" }
-        });
-      }
+      await recordIpBlock(req.ip, input.email, req, "recaptcha");
       throw new HttpError(
         400,
         "RECAPTCHA_FAILED",
@@ -158,22 +148,13 @@ async function requireHuman(
   try {
     requireCaptcha(input);
   } catch (error) {
-    const seconds = await recordIpFailure(req.ip);
     await logAuthEvent({
       eventType: "CAPTCHA_FAILED",
       email: input.email,
       req,
       details: { kind: "challenge" }
     });
-    if (seconds > 0) {
-      await logAuthEvent({
-        eventType: "IP_BLOCKED",
-        email: input.email,
-        usernameTyped: input.email,
-        req,
-        details: { seconds, source: "captcha" }
-      });
-    }
+    await recordIpBlock(req.ip, input.email, req, "captcha");
     throw error;
   }
 }
@@ -303,23 +284,16 @@ authRouter.post(
       .and(humanSchema)
       .parse(req.body);
 
-    const blocked = await ipBlockSeconds(req.ip);
-    if (blocked > 0) {
-      throw new HttpError(
-        429,
-        "IP_BLOCKED",
-        `Too many failed attempts. Try again in ${blocked} seconds.`,
-        { retryAfter: blocked }
-      );
-    }
-
     await requireHuman(body, req);
 
-    // Credentials only. No session exists until the code is correct.
-    const user = await authenticatePassword(
+    // Credentials only. No session exists until the code is correct. The
+    // IP throttle and account lock are decided inside the sign-in module.
+    const outcome = await attemptPasswordSignIn(
       { identifier: body.username, password: body.password },
       req
     );
+    if (outcome.kind !== "ok") throw signInError(outcome);
+    const user = outcome.user;
 
     if (user.status !== "active") {
       throw new HttpError(
@@ -519,7 +493,7 @@ authRouter.post(
     const challenge = await startOtp({
       userId: user.id,
       email: user.email,
-      name: user.display_name,
+      name: user.displayName,
       purpose: "reset",
       req
     });
@@ -573,7 +547,7 @@ authRouter.post(
     const body = z
       .object({
         token: z.string().trim().min(10).max(128),
-        password: z.string().min(9, "Password must be at least 9 characters.").max(64)
+        password: passwordSchema
       })
       .parse(req.body);
 

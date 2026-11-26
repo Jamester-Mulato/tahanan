@@ -11,6 +11,8 @@ import {
   recordPasswordHistory
 } from "./auth.service";
 import { sendPasswordChangedAlert } from "./mail.service";
+import { recordFailedAttempt } from "./sign-in.service";
+import { passwordProblem } from "./credential-policy";
 
 const RESET_TOKEN_MINUTES = 10;
 
@@ -27,20 +29,13 @@ export function seededQuestionList() {
 }
 
 async function findUser(identifier: string) {
-  const result = await query<{ id: string; email: string; display_name: string; locked_until: string | null }>(
-    `SELECT id, email, display_name, locked_until
+  const result = await query<{ id: string; email: string; displayName: string; locked_until: string | null }>(
+    `SELECT id, email, display_name AS "displayName", locked_until
        FROM users
       WHERE lower(username) = lower($1) OR lower(email) = lower($1)`,
     [identifier]
   );
   return result.rows[0] ?? null;
-}
-
-function lockoutSeconds(count: number): number | null {
-  if (count === 3) return env.LOCKOUT_TIER1_SECONDS;
-  if (count === 6) return env.LOCKOUT_TIER2_SECONDS;
-  if (count >= 9) return env.LOCKOUT_TIER3_SECONDS;
-  return null;
 }
 
 /** Always returns the three seeded questions so unknown users look identical. */
@@ -101,41 +96,19 @@ export async function verifySecurityAnswer(input: {
     : false;
 
   if (!ok) {
-    await query(
-      "UPDATE users SET failed_login_count = failed_login_count + 1, updated_at = now() WHERE id = $1",
-      [user.id]
-    );
-    const count = await query<{ failed_login_count: number }>(
-      "SELECT failed_login_count FROM users WHERE id = $1",
-      [user.id]
-    );
-    const seconds = lockoutSeconds(count.rows[0]?.failed_login_count ?? 1);
-    if (seconds) {
-      const attempts = count.rows[0]?.failed_login_count ?? 1;
-      await query(
-        "UPDATE users SET locked_until = now() + ($1 || ' seconds')::interval WHERE id = $2",
-        [String(seconds), user.id]
-      );
-      if (attempts === 3 || attempts === 6 || attempts === 9) {
-        await logAuthEvent({
-          eventType:
-            attempts === 9
-              ? "LOCKOUT_TIER_3"
-              : attempts === 6
-                ? "LOCKOUT_TIER_2"
-                : "LOCKOUT_TIER_1",
-          userId: user.id,
-          email: user.email,
-          usernameTyped: input.identifier,
-          req: input.req,
-          details: { attempts, seconds, source: "reset" }
-        });
-      }
+    const failure = await recordFailedAttempt({
+      user,
+      req: input.req,
+      identifier: input.identifier,
+      source: "reset",
+      alert: false
+    });
+    if (failure.seconds > 0) {
       throw new HttpError(
         423,
         "ACCOUNT_LOCKED",
-        `Too many attempts. Try again in ${seconds} seconds.`,
-        { retryAfter: seconds }
+        `Too many attempts. Try again in ${failure.seconds} seconds.`,
+        { retryAfter: failure.seconds }
       );
     }
     throw new HttpError(401, "RESET_DENIED", "One of those details is incorrect.");
@@ -167,18 +140,9 @@ export async function resetPasswordWithToken(input: {
   req?: Request;
 }) {
   const password = input.password;
-  if (password.length < 9) {
-    throw new HttpError(400, "WEAK_PASSWORD", "Password must be at least 9 characters.");
-  }
-  if (password.length > 64) {
-    throw new HttpError(400, "WEAK_PASSWORD", "Password must be at most 64 characters.");
-  }
-  if (password === password.toLowerCase() || !/\d/.test(password)) {
-    throw new HttpError(
-      400,
-      "WEAK_PASSWORD",
-      "Password must include an uppercase letter and a number."
-    );
+  const weak = passwordProblem(password);
+  if (weak) {
+    throw new HttpError(400, "WEAK_PASSWORD", weak);
   }
 
   const tokenHash = crypto.createHash("sha256").update(input.token).digest("hex");

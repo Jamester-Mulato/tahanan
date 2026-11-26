@@ -13,7 +13,8 @@
     "start": "node dist/server.js",
     "monitor": "tsx scripts/monitor.ts",
     "db:init": "node dist/utils/db-init.js",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
